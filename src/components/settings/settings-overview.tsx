@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronRight, Loader2 } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/client';
@@ -37,6 +38,7 @@ export function SettingsOverview({
 }) {
   const { user, profile, accountId, accountRole, defaultCurrency, canManageMembers } =
     useAuth();
+  const t = useTranslations('settings');
   const { mode, theme } = useTheme();
 
   const [counts, setCounts] = useState<OverviewCounts | null>(null);
@@ -158,14 +160,14 @@ export function SettingsOverview({
       section: 'whatsapp',
       loading: whatsappLoading,
       subtitle: !whatsapp?.configured ? (
-        'Not set up yet'
+        t('notSetUp')
       ) : whatsapp.connected ? (
         <>
-          <StatusDot tone="ok" /> Connected
+          <StatusDot tone="ok" /> {t('connected')}
         </>
       ) : (
         <>
-          <StatusDot tone="muted" /> Needs reconnecting
+          <StatusDot tone="muted" /> {t('needsReconnecting')}
         </>
       ),
     },
@@ -174,12 +176,10 @@ export function SettingsOverview({
       loading: countsLoading,
       subtitle:
         counts?.members == null
-          ? 'View team members'
-          : `${counts.members} member${counts.members === 1 ? '' : 's'}${
+          ? t('viewTeamMembers')
+          : `${t('membersCount', { n: counts.members })}${
               counts.pendingInvites
-                ? ` · ${counts.pendingInvites} pending invite${
-                    counts.pendingInvites === 1 ? '' : 's'
-                  }`
+                ? ` · ${t('pendingInvites', { n: counts.pendingInvites })}`
                 : ''
             }`,
     },
@@ -188,10 +188,10 @@ export function SettingsOverview({
       loading: countsLoading,
       subtitle:
         counts?.templates == null
-          ? 'Manage message templates'
-          : `${counts.templates} template${counts.templates === 1 ? '' : 's'}${
+          ? t('manageTemplates')
+          : `${t('templatesCount', { n: counts.templates })}${
               counts.templatesPending
-                ? ` · ${counts.templatesPending} pending review`
+                ? ` · ${t('pendingReview', { n: counts.templatesPending })}`
                 : ''
             }`,
     },
@@ -205,15 +205,13 @@ export function SettingsOverview({
       loading: countsLoading,
       subtitle:
         counts?.tags == null && counts?.customFields == null
-          ? 'Tags and custom fields'
-          : `${counts?.tags ?? 0} tag${counts?.tags === 1 ? '' : 's'} · ${
-              counts?.customFields ?? 0
-            } custom field${counts?.customFields === 1 ? '' : 's'}`,
+          ? t('tagsAndCustomFields')
+          : `${t('tagsCount', { n: counts?.tags ?? 0 })} · ${t('customFieldsCount', { n: counts?.customFields ?? 0 })}`,
     },
     {
       section: 'appearance',
       loading: false,
-      subtitle: `${cap(mode)} mode · ${themeName} accent`,
+      subtitle: t('appearance.modeAndTheme', { mode: cap(mode), theme: themeName }),
     },
   ];
 
@@ -272,7 +270,7 @@ export function SettingsOverview({
                 <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                   {loading ? (
                     <>
-                      <Loader2 className="size-3 animate-spin" /> Loading…
+                      <Loader2 className="size-3 animate-spin" /> {t('loading')}
                     </>
                   ) : (
                     subtitle

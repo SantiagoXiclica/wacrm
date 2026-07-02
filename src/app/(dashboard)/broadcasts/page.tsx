@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { Broadcast } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ function RateCell({
 
 export default function BroadcastsPage() {
   const router = useRouter();
+  const t = useTranslations("broadcasts");
   const canCreate = useCan('send-messages');
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,10 +141,10 @@ export default function BroadcastsPage() {
   if (error) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-2">
-        <p className="text-sm text-red-400">{error}</p>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          Retry
-        </Button>
+          <p className="text-sm text-red-400">{error}</p>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            {t("retry")}
+          </Button>
       </div>
     );
   }
@@ -154,7 +156,7 @@ export default function BroadcastsPage() {
       {anySending && (
         <div
           role="progressbar"
-          aria-label="Broadcast in progress"
+          aria-label={t("sending")}
           className="broadcast-indeterminate fixed inset-x-0 top-0 z-40 h-0.5 overflow-hidden bg-muted"
         >
           <div className="broadcast-indeterminate-bar h-0.5 bg-primary" />
@@ -179,9 +181,9 @@ export default function BroadcastsPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Broadcasts</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Send bulk messages to your contacts using approved templates.
+            {t("subtitle")}
           </p>
         </div>
         <GatedButton
@@ -191,16 +193,16 @@ export default function BroadcastsPage() {
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          New Broadcast
+          {t("newBroadcast")}
         </GatedButton>
       </div>
 
       {broadcasts.length === 0 ? (
         <div className="flex h-64 flex-col items-center justify-center rounded-xl border border-border bg-card">
           <Radio className="mb-3 h-10 w-10 text-muted-foreground" />
-          <p className="text-sm font-medium text-foreground">No broadcasts yet</p>
+          <p className="text-sm font-medium text-foreground">{t("noBroadcasts")}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Create your first broadcast to reach your contacts at scale.
+            {t("noBroadcastsDescription")}
           </p>
           <GatedButton
             canAct={canCreate}
@@ -208,8 +210,8 @@ export default function BroadcastsPage() {
             onClick={() => router.push('/broadcasts/new')}
             className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <Plus className="h-4 w-4" />
-            New Broadcast
+          <Plus className="h-4 w-4" />
+          {t("newBroadcast")}
           </GatedButton>
         </div>
       ) : (
@@ -217,15 +219,15 @@ export default function BroadcastsPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="text-muted-foreground">Name</TableHead>
-                <TableHead className="hidden text-muted-foreground md:table-cell">Template</TableHead>
+                <TableHead className="text-muted-foreground">{t("name")}</TableHead>
+                <TableHead className="hidden text-muted-foreground md:table-cell">{t("template")}</TableHead>
                 <TableHead className="hidden text-right text-muted-foreground sm:table-cell">
-                  Recipients
+                  {t("recipients")}
                 </TableHead>
-                <TableHead className="hidden text-muted-foreground lg:table-cell">Delivery</TableHead>
-                <TableHead className="hidden text-muted-foreground lg:table-cell">Read</TableHead>
-                <TableHead className="text-muted-foreground">Status</TableHead>
-                <TableHead className="hidden text-muted-foreground sm:table-cell">Date</TableHead>
+                <TableHead className="hidden text-muted-foreground lg:table-cell">{t("delivery")}</TableHead>
+                <TableHead className="hidden text-muted-foreground lg:table-cell">{t("read")}</TableHead>
+                <TableHead className="text-muted-foreground">{t("status")}</TableHead>
+                <TableHead className="hidden text-muted-foreground sm:table-cell">{t("date")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
