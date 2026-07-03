@@ -313,7 +313,7 @@ export function MembersTab() {
                 {t('offline', { n: counts.offline })}
               </span>
               <span className="text-muted-foreground/70">
-                · {members.length} member{members.length === 1 ? '' : 's'}
+                · {members.length === 1 ? t('membersCount', { n: members.length }) : t('membersCount_plural', { n: members.length })}
               </span>
             </div>
           );

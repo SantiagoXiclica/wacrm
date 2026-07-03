@@ -79,7 +79,7 @@ export function AiConfig() {
       const res = await fetch('/api/ai/config');
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? 'Failed to load AI configuration');
+        toast.error(data.error ?? t('failedToLoad'));
         return;
       }
       if (data.configured) {
@@ -98,7 +98,7 @@ export function AiConfig() {
         setEmbeddingsKeyEdited(false);
       }
     } catch {
-      toast.error('Failed to load AI configuration');
+      toast.error(t('failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -151,10 +151,10 @@ export function AiConfig() {
         }),
       });
       const data = await res.json();
-      if (res.ok) toast.success('Key works — the provider responded.');
-      else toast.error(data.error ?? 'The provider rejected the request.');
+      if (res.ok) toast.success(t('testKeySuccess'));
+      else toast.error(data.error ?? t('testKeyFailed'));
     } catch {
-      toast.error('Could not reach the provider.');
+      toast.error(t('testKeyNetworkError'));
     } finally {
       setTesting(false);
     }
@@ -162,11 +162,11 @@ export function AiConfig() {
 
   const handleSave = async () => {
     if (!model.trim()) {
-      toast.error('Enter a model name.');
+      toast.error(t('enterModelName'));
       return;
     }
     if (!configured && !keyEdited) {
-      toast.error('Enter your API key.');
+      toast.error(t('enterApiKey'));
       return;
     }
     setSaving(true);
@@ -178,13 +178,13 @@ export function AiConfig() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success('AI assistant saved.');
+        toast.success(t('aiSaved'));
         await fetchConfig();
       } else {
-        toast.error(data.error ?? 'Failed to save.');
+        toast.error(data.error ?? t('failedToSave'));
       }
     } catch {
-      toast.error('Failed to save.');
+      toast.error(t('failedToSave'));
     } finally {
       setSaving(false);
     }
@@ -195,7 +195,7 @@ export function AiConfig() {
     try {
       const res = await fetch('/api/ai/config', { method: 'DELETE' });
       if (res.ok) {
-        toast.success('AI configuration removed.');
+        toast.success(t('aiRemoved'));
         setConfigured(false);
         setHasStoredKey(false);
         setApiKey('');
@@ -205,10 +205,10 @@ export function AiConfig() {
         setSystemPrompt('');
       } else {
         const data = await res.json();
-        toast.error(data.error ?? 'Failed to remove.');
+        toast.error(data.error ?? t('failedToRemove'));
       }
     } catch {
-      toast.error('Failed to remove.');
+      toast.error(t('failedToRemove'));
     } finally {
       setRemoving(false);
     }
@@ -217,7 +217,7 @@ export function AiConfig() {
   if (loading || profileLoading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('loading')}…
       </div>
     );
   }
@@ -325,7 +325,7 @@ export function AiConfig() {
                   ) : (
                     <CheckCircle2 className="mr-2 h-4 w-4" />
                   )}
-                  Test key
+                  {t('testKey')}
                 </Button>
               </div>
             </div>
@@ -416,9 +416,9 @@ export function AiConfig() {
 
             <div className="flex items-center justify-between gap-4">
               <div>
-                <Label htmlFor="ai-max">Max auto-replies per conversation</Label>
+                <Label htmlFor="ai-max">{t('maxAutoReplies')}</Label>
                 <p className="text-xs text-muted-foreground">
-                  After this many bot replies in one thread, the bot goes quiet.
+                  {t('maxAutoRepliesDesc')}
                 </p>
               </div>
               <Input
@@ -462,7 +462,7 @@ export function AiConfig() {
               ) : (
                 <Trash2 className="mr-2 h-4 w-4" />
               )}
-              Remove
+              {t('remove')}
             </Button>
           ) : (
             <span />
@@ -470,7 +470,7 @@ export function AiConfig() {
 
           <Button onClick={handleSave} disabled={disabled}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
+            {t('save')}
           </Button>
         </div>
       </div>
