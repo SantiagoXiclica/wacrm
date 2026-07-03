@@ -125,6 +125,7 @@ function fmtExpiresIn(iso: string, t?: ReturnType<typeof useTranslations>): stri
 
 export function MembersTab() {
   const t = useTranslations('settings.members');
+  const tr = useTranslations('roles');
   const { user, canManageMembers } = useAuth();
   const { getPresence, getRow, now } = usePresence();
 
@@ -441,7 +442,7 @@ export function MembersTab() {
                         className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium ${roleMeta.className}`}
                       >
                         <RoleIcon className="size-3.5" />
-                        {roleMeta.label}
+                        {tr(roleMeta.label as any)}
                       </span>
                     )}
 
@@ -527,7 +528,7 @@ export function MembersTab() {
                             className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${inviteRoleMeta.className}`}
                           >
                             <InviteRoleIcon className="size-3" />
-                            {inviteRoleMeta.label}
+                            {tr(inviteRoleMeta.label as any)}
                           </span>
                         </div>
                         <p className="mt-0.5 text-xs text-muted-foreground">
