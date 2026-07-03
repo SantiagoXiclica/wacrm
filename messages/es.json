@@ -806,14 +806,27 @@
     "noMessages": "Aún no hay mensajes",
     "sendTemplateHint": "Envía una plantilla para iniciar la conversación",
     "refresh": "Actualizar",
-    "backToConversations": "Volver a conversaciones"
+    "backToConversations": "Volver a conversaciones",
+    "statusOpen": "Abierto",
+    "statusPending": "Pendiente",
+    "statusClosed": "Cerrado",
+    "assign": "Asignar",
+    "assigned": "Asignado",
+    "remaining": "quedan {n}h",
+    "remainingMinutes": "quedan {n}m",
+    "expired": "Expirado",
+    "noCustomerMessages": "Sin mensajes del cliente",
+    "today": "Hoy",
+    "yesterday": "Ayer"
   },
   "contactSidebar": {
     "selectConversation": "Selecciona una conversación",
     "tags": "Etiquetas",
     "noTags": "Sin etiquetas",
     "noDeals": "Sin ofertas",
-    "addNotePlaceholder": "Agregar una nota..."
+    "addNotePlaceholder": "Agregar una nota...",
+    "activeDeals": "Ofertas activas",
+    "notes": "Notas"
   },
   "templatePicker": {
     "noApprovedTemplates": "No hay plantillas aprobadas",
@@ -1272,7 +1285,12 @@
   "messageComposer": {
     "stopAndAttach": "Detener y adjuntar",
     "removeAttachment": "Quitar adjunto",
-    "captionPlaceholder": "Agregar una descripción…"
+    "captionPlaceholder": "Agregar una descripción…",
+    "readOnlyPlaceholder": "Solo lectura — los espectadores pueden navegar pero no responder",
+    "sessionExpiredPlaceholder": "Sesión expirada - usa una plantilla",
+    "typeMessagePlaceholder": "Escribe un mensaje... (Shift+Enter para nueva línea)",
+    "aiHint": "Toca el ✨ para redactar una respuesta con IA — puedes editarla antes de enviar",
+    "readOnlyTitle": "Solo lectura — tu rol no puede enviar mensajes"
   },
   "broadcastDetail": {
     "deleteBroadcast": "Eliminar esta transmisión",

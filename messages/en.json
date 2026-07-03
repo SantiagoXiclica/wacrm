@@ -807,14 +807,27 @@
     "noMessages": "No messages yet",
     "sendTemplateHint": "Send a template to start the conversation",
     "refresh": "Refresh",
-    "backToConversations": "Back to conversations"
+    "backToConversations": "Back to conversations",
+    "statusOpen": "Open",
+    "statusPending": "Pending",
+    "statusClosed": "Closed",
+    "assign": "Assign",
+    "assigned": "Assigned",
+    "remaining": "{n}h remaining",
+    "remainingMinutes": "{n}m remaining",
+    "expired": "Expired",
+    "noCustomerMessages": "No customer messages",
+    "today": "Today",
+    "yesterday": "Yesterday"
   },
   "contactSidebar": {
     "selectConversation": "Select a conversation",
     "tags": "Tags",
     "noTags": "No tags",
     "noDeals": "No deals",
-    "addNotePlaceholder": "Add a note..."
+    "addNotePlaceholder": "Add a note...",
+    "activeDeals": "Active Deals",
+    "notes": "Notes"
   },
   "templatePicker": {
     "noApprovedTemplates": "No approved templates",
@@ -1273,7 +1286,12 @@
   "messageComposer": {
     "stopAndAttach": "Stop and attach",
     "removeAttachment": "Remove attachment",
-    "captionPlaceholder": "Add a caption…"
+    "captionPlaceholder": "Add a caption…",
+    "readOnlyPlaceholder": "Read-only — viewers can browse but not reply",
+    "sessionExpiredPlaceholder": "Session expired - use a template",
+    "typeMessagePlaceholder": "Type a message... (Shift+Enter for new line)",
+    "aiHint": "Tap the ✨ to draft a reply with AI — you can edit it before sending",
+    "readOnlyTitle": "Read-only — your role can't send messages"
   },
   "broadcastDetail": {
     "deleteBroadcast": "Delete this broadcast",

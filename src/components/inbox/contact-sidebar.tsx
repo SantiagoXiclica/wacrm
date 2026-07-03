@@ -212,7 +212,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
           <div>
             <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <DollarSign className="h-3 w-3" />
-              Active Deals
+              {t('activeDeals')}
             </div>
             <div className="mt-2 space-y-2">
               {deals.length === 0 ? (
@@ -256,7 +256,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
           <div>
             <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <StickyNote className="h-3 w-3" />
-              Notes
+              {t('notes')}
             </div>
             <div className="mt-2">
               <div className="flex gap-2">
