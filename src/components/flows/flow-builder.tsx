@@ -18,6 +18,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   CircleAlert,
   Plus,
@@ -72,6 +73,7 @@ import { useFlowEditor, type BuilderState } from './flow-editor-state';
 // ============================================================
 
 export function FlowBuilder() {
+  const t = useTranslations('flows');
   const {
     state,
     setState,
@@ -390,6 +392,7 @@ function NodeCard({
   onRemove: () => void;
   onSetEntry: () => void;
 }) {
+  const t = useTranslations('flows');
   const meta = NODE_META[node.node_type];
   const c = nodeColors(node.node_type);
   const hasError = issues.some((i) => i.severity === 'error');
@@ -424,7 +427,7 @@ function NodeCard({
               className="truncate text-[11px] font-semibold tracking-wider uppercase"
               style={{ color: c.text }}
             >
-              {meta.label}
+              {t(meta.labelKey as any)}
             </span>
             <code className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">
               {node.node_key}
@@ -566,6 +569,7 @@ function NodeConfigWithAdvanced({
 // ============================================================
 
 function AddNodeButton({ onAdd }: { onAdd: (type: NodeType) => void }) {
+  const t = useTranslations('flows');
   const types: NodeType[] = [
     'start',
     'send_buttons',
@@ -594,12 +598,12 @@ function AddNodeButton({ onAdd }: { onAdd: (type: NodeType) => void }) {
             <DropdownMenuLabel className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
               {group.label}
             </DropdownMenuLabel>
-            {group.types.map((t) => {
-              const meta = NODE_META[t];
+            {group.types.map((nodeType) => {
+              const meta = NODE_META[nodeType];
               return (
-                <DropdownMenuItem key={t} onClick={() => onAdd(t)}>
+                <DropdownMenuItem key={nodeType} onClick={() => onAdd(nodeType)}>
                   <meta.icon className={cn('h-3.5 w-3.5', meta.color)} />
-                  {meta.label}
+              {t(meta.labelKey as any)}
                 </DropdownMenuItem>
               );
             })}

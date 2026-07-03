@@ -55,19 +55,19 @@ export function AppearancePanel() {
       <div className="mt-8 space-y-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Palette className="size-4 text-muted-foreground" />
-          Accent color
+          {t('accentColor')}
         </h3>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {THEMES.map((t) => (
+          {THEMES.map((themeItem) => (
             <ThemeCard
-              key={t.id}
-              id={t.id}
-              name={t.name}
-              tagline={t.tagline}
-              swatch={t.swatch}
-              isActive={t.id === theme}
-              onPick={() => setTheme(t.id)}
+              key={themeItem.id}
+              id={themeItem.id}
+              name={t(`theme${themeItem.id.charAt(0).toUpperCase() + themeItem.id.slice(1)}` as any)}
+              tagline={t(`theme${themeItem.id.charAt(0).toUpperCase() + themeItem.id.slice(1)}Tagline` as any)}
+              swatch={themeItem.swatch}
+              isActive={themeItem.id === theme}
+              onPick={() => setTheme(themeItem.id)}
             />
           ))}
         </div>
@@ -85,6 +85,7 @@ function ModeCard({
   isActive: boolean;
   onPick: () => void;
 }) {
+  const t = useTranslations('settingsPanels');
   const isLight = mode === "light";
   const Icon = isLight ? Sun : Moon;
   return (
@@ -93,7 +94,7 @@ function ModeCard({
       role="radio"
       onClick={onPick}
       aria-checked={isActive}
-      aria-label={`Use ${mode} mode`}
+      aria-label={t(mode as any)}
       className={cn(
         "flex items-center gap-3 rounded-lg border bg-card p-4 text-left transition-colors",
         isActive
@@ -108,12 +109,12 @@ function ModeCard({
         <Icon className="h-4 w-4" />
       </span>
       <span className="flex-1 text-sm font-semibold capitalize text-foreground">
-        {mode}
+        {t(mode as any)}
       </span>
       {isActive && (
         <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
           <Check className="h-3 w-3" />
-          Active
+          {t('active')}
         </span>
       )}
     </button>
@@ -135,12 +136,13 @@ function ThemeCard({
   isActive: boolean;
   onPick: () => void;
 }) {
+  const t = useTranslations('settingsPanels');
   return (
     <button
       type="button"
       onClick={onPick}
       aria-pressed={isActive}
-      aria-label={`Use ${name} theme`}
+      aria-label={`${name}`}
       className={cn(
         "flex flex-col gap-3 rounded-lg border bg-card p-4 text-left transition-colors",
         isActive
@@ -160,7 +162,7 @@ function ThemeCard({
         {isActive && (
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
             <Check className="h-3 w-3" />
-            Active
+            {t('active')}
           </span>
         )}
       </div>

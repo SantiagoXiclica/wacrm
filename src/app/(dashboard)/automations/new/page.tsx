@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 import {
   AutomationBuilder,
@@ -11,15 +12,32 @@ import {
 import { AUTOMATION_TEMPLATES, type TemplateSlug } from "@/lib/automations/templates"
 import type { AutomationStepType, AutomationTriggerType } from "@/types"
 
+const TEMPLATE_NAME_KEYS: Record<TemplateSlug, string> = {
+  welcome_message: "templateWelcomeMessage",
+  out_of_office: "templateOutOfOffice",
+  lead_qualifier: "templateLeadQualifier",
+  follow_up_reminder: "templateFollowUpReminder",
+}
+
+const TEMPLATE_DESC_KEYS: Record<TemplateSlug, string> = {
+  welcome_message: "templateWelcomeMessageDesc",
+  out_of_office: "templateOutOfOfficeDesc",
+  lead_qualifier: "templateLeadQualifierDesc",
+  follow_up_reminder: "templateFollowUpReminderDesc",
+}
+
 export default function NewAutomationPage() {
   const params = useSearchParams()
   const template = params.get("template") as TemplateSlug | null
+  const t = useTranslations("automations")
 
   const initial: BuilderInitial = useMemo(() => {
     if (template && AUTOMATION_TEMPLATES[template]) {
-      const t = AUTOMATION_TEMPLATES[template]
+      const tmpl = AUTOMATION_TEMPLATES[template]
+      const nameKey = TEMPLATE_NAME_KEYS[template]
+      const descKey = TEMPLATE_DESC_KEYS[template]
       const steps = expandFromSeeds(
-        t.steps.map((seed, idx) => ({
+        tmpl.steps.map((seed, idx) => ({
           index: idx,
           step_type: seed.step_type,
           step_config: seed.step_config as Record<string, unknown>,
@@ -28,10 +46,10 @@ export default function NewAutomationPage() {
         })),
       )
       return {
-        name: t.name,
-        description: t.description,
-        trigger_type: t.trigger_type,
-        trigger_config: t.trigger_config as Record<string, unknown>,
+        name: nameKey ? t(nameKey as any) : tmpl.name,
+        description: descKey ? t(descKey as any) : tmpl.description,
+        trigger_type: tmpl.trigger_type,
+        trigger_config: tmpl.trigger_config as Record<string, unknown>,
         is_active: false,
         steps,
       }
@@ -44,7 +62,7 @@ export default function NewAutomationPage() {
       is_active: false,
       steps: [],
     }
-  }, [template])
+  }, [template, t])
 
   return <AutomationBuilder initial={initial} />
 }

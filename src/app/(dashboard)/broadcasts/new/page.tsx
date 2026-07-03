@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
@@ -13,15 +14,11 @@ import { Step4ScheduleSend } from '@/components/broadcasts/step4-schedule-send';
 import { useBroadcastSending } from '@/hooks/use-broadcast-sending';
 import { Check } from 'lucide-react';
 
-const steps = [
-  { label: 'Template', key: 'template' },
-  { label: 'Audience', key: 'audience' },
-  { label: 'Personalize', key: 'personalize' },
-  { label: 'Send', key: 'send' },
-] as const;
+const STEP_KEYS = ['template', 'audience', 'personalize', 'send'] as const;
 
 export default function NewBroadcastPage() {
   const router = useRouter();
+  const t = useTranslations('broadcastSteps');
   const { accountId } = useAuth();
   const { createAndSendBroadcast, isProcessing, progress } = useBroadcastSending();
 
@@ -139,12 +136,12 @@ export default function NewBroadcastPage() {
 
       {/* Step Indicator */}
       <div className="flex items-center justify-between">
-        {steps.map((step, index) => {
+        {STEP_KEYS.map((key, index) => {
           const isActive = index === currentStep;
           const isCompleted = index < currentStep;
 
           return (
-            <div key={step.key} className="flex flex-1 items-center">
+            <div key={key} className="flex flex-1 items-center">
               <div className="flex items-center gap-2">
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-all ${
@@ -162,10 +159,10 @@ export default function NewBroadcastPage() {
                     isActive ? 'text-foreground' : isCompleted ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
-                  {step.label}
+                  {t(key as any)}
                 </span>
               </div>
-              {index < steps.length - 1 && (
+              {index < STEP_KEYS.length - 1 && (
                 <div
                   className={`mx-3 h-px flex-1 ${
                     index < currentStep ? 'bg-primary' : 'bg-muted'

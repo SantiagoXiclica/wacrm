@@ -473,7 +473,7 @@ export function FlowEditorProvider({
   const addNode = useCallback(
     (type: NodeType): string => {
       const meta = NODE_META[type];
-      const base = slugify(meta.label, type);
+      const base = slugify(type, type);
       let createdKey = base;
       setState((s) => {
         const node_key = uniqueNodeKey(base, s.nodes);

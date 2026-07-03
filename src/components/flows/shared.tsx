@@ -89,81 +89,81 @@ export const NODE_CATEGORIES: { id: NodeCategory; label: string }[] = [
 export const NODE_META: Record<
   NodeType,
   {
-    label: string;
+    labelKey: string;
     icon: typeof Workflow;
     color: string;
-    blurb: string;
+    blurbKey: string;
     category: NodeCategory;
   }
 > = {
   start: {
-    label: 'Start',
+    labelKey: 'flowNodeStart',
     icon: PlayCircle,
     color: 'text-emerald-400',
-    blurb: 'Entry point of the flow',
+    blurbKey: 'flowDescStart',
     category: 'flow',
   },
   send_message: {
-    label: 'Send message',
+    labelKey: 'flowNodeSendMessage',
     icon: MessageCircle,
     color: 'text-sky-400',
-    blurb: 'Sends a WhatsApp text message',
+    blurbKey: 'flowDescSendMessage',
     category: 'messaging',
   },
   send_buttons: {
-    label: 'Send buttons',
+    labelKey: 'flowNodeSendButtons',
     icon: ListChecks,
     color: 'text-primary',
-    blurb: 'Sends quick-reply buttons',
+    blurbKey: 'flowDescSendButtons',
     category: 'messaging',
   },
   send_list: {
-    label: 'Send list',
+    labelKey: 'flowNodeSendList',
     icon: ListPlus,
     color: 'text-indigo-400',
-    blurb: 'Sends a tappable list of options',
+    blurbKey: 'flowDescSendList',
     category: 'messaging',
   },
   send_media: {
-    label: 'Send media',
+    labelKey: 'flowNodeSendMedia',
     icon: Paperclip,
     color: 'text-cyan-400',
-    blurb: 'Sends an image, video, or document',
+    blurbKey: 'flowDescSendMedia',
     category: 'messaging',
   },
   collect_input: {
-    label: 'Collect input',
+    labelKey: 'flowNodeCollectInput',
     icon: Inbox,
     color: 'text-teal-400',
-    blurb: 'Asks a question, saves the reply',
+    blurbKey: 'flowDescCollectInput',
     category: 'logic',
   },
   condition: {
-    label: 'If / else',
+    labelKey: 'flowNodeCondition',
     icon: GitFork,
     color: 'text-fuchsia-400',
-    blurb: 'Branches on a rule',
+    blurbKey: 'flowDescCondition',
     category: 'logic',
   },
   set_tag: {
-    label: 'Tag contact',
+    labelKey: 'flowNodeSetTag',
     icon: Tag,
     color: 'text-pink-400',
-    blurb: 'Adds or removes a contact tag',
+    blurbKey: 'flowDescSetTag',
     category: 'logic',
   },
   handoff: {
-    label: 'Handoff to agent',
+    labelKey: 'flowNodeHandoff',
     icon: UserPlus,
     color: 'text-amber-400',
-    blurb: 'Hands the conversation to a human',
+    blurbKey: 'flowDescHandoff',
     category: 'flow',
   },
   end: {
-    label: 'End',
+    labelKey: 'flowNodeEnd',
     icon: Flag,
     color: 'text-muted-foreground',
-    blurb: 'Ends the flow',
+    blurbKey: 'flowDescEnd',
     category: 'flow',
   },
 };

@@ -54,8 +54,23 @@ export function DealForm({
   onSaved,
 }: DealFormProps) {
   const t = useTranslations('dealForm');
+  const tPipelines = useTranslations('pipelines');
   const supabase = createClient();
   const { accountId, defaultCurrency } = useAuth();
+
+  // Translation mapping for default stage names
+  const STAGE_NAME_MAP: Record<string, string> = {
+    "New Lead": "newLead",
+    "Qualified": "qualified",
+    "Proposal Sent": "proposalSent",
+    "Negotiation": "negotiation",
+    "Won": "won",
+  };
+
+  const translateStageName = (name: string) => {
+    const key = STAGE_NAME_MAP[name];
+    return key ? tPipelines(key as any) : name;
+  };
 
   const [title, setTitle] = useState("");
   const [value, setValue] = useState("");
@@ -344,7 +359,7 @@ export function DealForm({
               >
                 {stages.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name}
+                    {translateStageName(s.name)}
                   </option>
                 ))}
               </select>

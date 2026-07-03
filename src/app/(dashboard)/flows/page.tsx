@@ -76,6 +76,18 @@ const TEMPLATE_ICONS = {
   UserPlus,
 } as const;
 
+const TEMPLATE_NAME_KEYS: Record<string, string> = {
+  welcome_menu: "templateWelcomeMenu",
+  faq_bot: "templateFaqBot",
+  lead_capture: "templateLeadCapture",
+};
+
+const TEMPLATE_DESC_KEYS: Record<string, string> = {
+  welcome_menu: "templateWelcomeMenuDesc",
+  faq_bot: "templateFaqBotDesc",
+  lead_capture: "templateLeadCaptureDesc",
+};
+
 export default function FlowsPage() {
   const router = useRouter();
   const t = useTranslations("flows");
@@ -256,6 +268,8 @@ export default function FlowsPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {templates.map((tmpl) => {
                   const Icon = TEMPLATE_ICONS[tmpl.icon] ?? FileText;
+                  const nameKey = TEMPLATE_NAME_KEYS[tmpl.slug];
+                  const descKey = TEMPLATE_DESC_KEYS[tmpl.slug];
                   return (
                     <button
                       key={tmpl.slug}
@@ -266,10 +280,10 @@ export default function FlowsPage() {
                     >
                       <Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm font-semibold text-popover-foreground">
-                        {tmpl.name}
+                        {nameKey ? t(nameKey as any) : tmpl.name}
                       </span>
                       <span className="text-xs leading-relaxed text-muted-foreground">
-                        {tmpl.description}
+                        {descKey ? t(descKey as any) : tmpl.description}
                       </span>
                       <span className="mt-auto border-t border-border pt-2 text-[11px] text-muted-foreground">
                         {t("nodes", { n: tmpl.node_count })}

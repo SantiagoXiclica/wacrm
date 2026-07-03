@@ -132,6 +132,7 @@ function slotColor(nodeType: NodeType, slotId: string, fallback: string) {
 }
 
 function FlowNodeCard({ data, selected }: NodeProps) {
+  const tFlows = useTranslations('flows');
   const { node, isEntry, isFlashed } = data as NodeData;
   const meta = NODE_META[node.node_type];
   const c = nodeColors(node.node_type);
@@ -191,7 +192,7 @@ function FlowNodeCard({ data, selected }: NodeProps) {
           className="truncate text-[10.5px] font-semibold tracking-wider uppercase"
           style={{ color: c.text }}
         >
-          {meta.label}
+          {meta.labelKey ? tFlows(meta.labelKey as any) : ''}
         </span>
         {isEntry && (
           <span className="border-border text-muted-foreground ml-auto rounded border px-1.5 py-0.5 text-[8.5px] font-bold tracking-[0.1em] uppercase">
@@ -271,6 +272,7 @@ export function FlowCanvas() {
 
 function FlowCanvasInner() {
   const t = useTranslations('flowEditor');
+  const tFlows = useTranslations('flows');
   const {
     state,
     setState,
@@ -607,6 +609,7 @@ function NodeEditSheet({
   onDelete: () => void;
   onSetEntry: () => void;
 }) {
+  const tFlows = useTranslations('flows');
   // Sheet is controlled — opens when a node is selected, closes via
   // Esc / overlay / close button (all delegated to onClose).
   const open = node !== null;
@@ -629,7 +632,7 @@ function NodeEditSheet({
           <NodeIconChip type={node.node_type} size={36} iconSize={18} />
           <div className="min-w-0 flex-1">
             <SheetTitle className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase">
-              <span style={{ color: c.text }}>{meta.label}</span>
+              <span style={{ color: c.text }}>{tFlows(meta.labelKey as any)}</span>
               {isEntry && (
                 <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-semibold tracking-wider text-emerald-300 uppercase">
                   Entry
@@ -637,7 +640,7 @@ function NodeEditSheet({
               )}
             </SheetTitle>
             <SheetDescription className="text-muted-foreground mt-0.5 text-xs">
-              {meta.blurb}
+              {tFlows(meta.blurbKey as any)}
             </SheetDescription>
           </div>
           <code className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px]">
@@ -699,6 +702,7 @@ const ADD_NODE_TYPES: NodeType[] = [
 
 function CanvasAddNodeButton() {
   const t = useTranslations('flowEditor');
+  const tFlows = useTranslations('flows');
   const reactFlow = useReactFlow();
   const { addNode, updateNodePosition } = useFlowEditor();
 
@@ -745,26 +749,26 @@ function CanvasAddNodeButton() {
             <DropdownMenuLabel className="text-muted-foreground px-2 py-1.5 text-[11px] font-semibold tracking-wider uppercase">
               {group.label}
             </DropdownMenuLabel>
-            {group.types.map((t) => {
-              const meta = NODE_META[t];
+            {group.types.map((nodeType) => {
+              const meta = NODE_META[nodeType];
               return (
                 <DropdownMenuItem
-                  key={t}
-                  onClick={() => handleAdd(t)}
+                  key={nodeType}
+                  onClick={() => handleAdd(nodeType)}
                   className="gap-3 py-2"
                 >
                   <NodeIconChip
-                    type={t}
+                    type={nodeType}
                     size={28}
                     iconSize={16}
                     className="rounded-md"
                   />
                   <span className="flex flex-col">
                     <span className="text-popover-foreground text-[13px] font-semibold">
-                      {meta.label}
+          {meta.labelKey ? tFlows(meta.labelKey as any) : ''}
                     </span>
                     <span className="text-muted-foreground text-[11.5px]">
-                      {meta.blurb}
+                      {tFlows(meta.blurbKey as any)}
                     </span>
                   </span>
                 </DropdownMenuItem>

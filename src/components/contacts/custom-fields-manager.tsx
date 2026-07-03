@@ -55,6 +55,7 @@ export function CustomFieldsManager({
  * `custom_fields` RLS also rejects non-admin writes as defense in depth.
  */
 export function CustomFieldsPanel() {
+  const t = useTranslations('customFieldsManager');
   const supabase = createClient();
   const { user, accountId } = useAuth();
 

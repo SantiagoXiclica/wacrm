@@ -408,26 +408,6 @@ export function ImportModal({
             </DialogTitle>
             <DialogDescription className="leading-relaxed text-muted-foreground">
               {t('description')}
-              <code className="rounded bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">
-                phone
-              </code>{' '}
-              column. Optional:{' '}
-              <code className="rounded bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">
-                name
-              </code>
-              ,{' '}
-              <code className="rounded bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">
-                email
-              </code>
-              ,{' '}
-              <code className="rounded bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">
-                company
-              </code>
-              ,{' '}
-              <code className="rounded bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">
-                tags
-              </code>{' '}
-              (comma-separated; quote multi-tag cells).
             </DialogDescription>
           </DialogHeader>
 
@@ -468,10 +448,10 @@ export function ImportModal({
                   <Upload className="size-5 text-muted-foreground group-hover:text-foreground" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Click to choose a CSV file
+                  {t('clickToChoose')}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  .csv up to your browser limit
+                  {t('csvLimit')}
                 </p>
               </>
             )}
@@ -511,22 +491,22 @@ export function ImportModal({
                     <thead>
                       <tr className="border-b border-border bg-background/60">
                         <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                          Phone
+                          {t('phone')}
                         </th>
                         <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                          Name
+                          {t('name')}
                         </th>
                         <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                          Email
+                          {t('email')}
                         </th>
                         {previewHasCompany && (
                           <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                            Company
+                            {t('company')}
                           </th>
                         )}
                         {previewHasTags && (
-                          <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
-                            Tags
+                           <th className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
+                             {t('tags')}
                           </th>
                         )}
                       </tr>
@@ -601,14 +581,13 @@ export function ImportModal({
                 {result.tagsAssigned > 0 && (
                   <div className="flex items-center gap-1.5 text-sm text-cyan-400">
                     <CheckCircle className="size-4 shrink-0" />
-                    {result.tagsAssigned} tag
-                    {result.tagsAssigned !== 1 ? 's' : ''} assigned
+                    {result.tagsAssigned} {t('tagsAssigned')}
                   </div>
                 )}
                 {result.skipped > 0 && (
                   <div className="flex items-center gap-1.5 text-sm text-amber-400">
                     <AlertTriangle className="size-4 shrink-0" />
-                    {result.skipped} skipped
+                    {result.skipped} {t('skipped')}
                   </div>
                 )}
                 {result.failed > 0 && (
@@ -629,7 +608,7 @@ export function ImportModal({
             onClick={() => handleOpenChange(false)}
             className="border-border text-muted-foreground hover:bg-muted"
           >
-            {result ? 'Close' : 'Cancel'}
+            {result ? 'Close' : t('cancel')}
           </Button>
           {!result && (
             <Button
@@ -639,8 +618,7 @@ export function ImportModal({
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {importing && <Loader2 className="size-4 animate-spin" />}
-              Import {parsedRows.length > 0 ? parsedRows.length : ''} contact
-              {parsedRows.length !== 1 ? 's' : ''}
+              {t('importButton')}
             </Button>
           )}
         </DialogFooter>

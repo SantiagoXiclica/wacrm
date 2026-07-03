@@ -287,11 +287,12 @@ function TagSelect({
   value: string
   onChange: (v: string) => void
 }) {
+  const t = useTranslations('automationBuilder')
   const { tags } = useResources()
   if (tags.length === 0) {
     return (
       <Input
-        placeholder="Tag id"
+        placeholder={t('tagId')}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="bg-muted text-foreground"
@@ -1010,7 +1011,7 @@ function StepRenderer({
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                {isCondition ? "Condition" : step.step_type === "wait" ? "Wait" : "Action"}
+                {isCondition ? t('condition') : step.step_type === "wait" ? t('wait') : t('action')}
               </div>
               <div className="truncate text-sm font-medium text-foreground">{meta.label}</div>
               <div className="truncate text-[11px] text-muted-foreground">{previewFor(step)}</div>
@@ -1084,6 +1085,7 @@ function ConditionBranches({
   step: BuilderStep
   parentPath: StepPath
 } & Omit<StepListProps, "steps" | "parentPath">) {
+  const t = useTranslations('automationBuilder');
   const yes = step.branches?.yes ?? []
   const no = step.branches?.no ?? []
   // Build the child scope by appending a branch marker. The scope the
@@ -1102,10 +1104,10 @@ function ConditionBranches({
     // cram each branch to ~170px which is too narrow for the nested
     // cards. Two-column grid returns on sm+.
     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <BranchColumn label="Yes" color="text-primary">
+      <BranchColumn label={t('yes')} color="text-primary">
         <StepList {...props} steps={yes} parentPath={yesPath} />
       </BranchColumn>
-      <BranchColumn label="No" color="text-rose-400">
+      <BranchColumn label={t('no')} color="text-rose-400">
         <StepList {...props} steps={no} parentPath={noPath} />
       </BranchColumn>
     </div>
@@ -1302,19 +1304,19 @@ function StepEditor({
     case "condition":
       return (
         <>
-          <FieldBlock label="Subject">
+          <FieldBlock label={t('subject')}>
             <select
               value={(cfg.subject as string) ?? "tag_presence"}
               onChange={(e) => set({ subject: e.target.value })}
               className="w-full rounded-md border border-border bg-muted px-2 py-1.5 text-sm text-foreground"
             >
-              <option value="tag_presence">Tag presence</option>
-              <option value="contact_field">Contact field</option>
-              <option value="message_content">Message content</option>
-              <option value="time_of_day">Time of day</option>
+              <option value="tag_presence">{t('tagPresence')}</option>
+              <option value="contact_field">{t('contactField')}</option>
+              <option value="message_content">{t('messageContent')}</option>
+              <option value="time_of_day">{t('timeOfDay')}</option>
             </select>
           </FieldBlock>
-          <FieldBlock label="Operand">
+          <FieldBlock label={t('operand')}>
             <Input
               placeholder={
                 cfg.subject === "time_of_day"
@@ -1322,7 +1324,7 @@ function StepEditor({
                   : cfg.subject === "contact_field"
                   ? "name / email / company"
                   : cfg.subject === "tag_presence"
-                  ? "tag id"
+                  ? t('tagId')
                   : ""
               }
               value={(cfg.operand as string) ?? ""}
