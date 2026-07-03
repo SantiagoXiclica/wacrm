@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface CustomFieldsManagerProps {
   open: boolean;
@@ -31,15 +32,14 @@ export function CustomFieldsManager({
   open,
   onOpenChange,
 }: CustomFieldsManagerProps) {
+  const t = useTranslations('customFieldsManager');
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-border bg-popover text-popover-foreground sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-popover-foreground">Custom fields</DialogTitle>
+          <DialogTitle className="text-popover-foreground">{t('title')}</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Define extra contact fields (e.g. ZIP code, lead source). They
-            appear on every contact and in the “Update Contact Field” automation
-            action.
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
         <CustomFieldsPanel />

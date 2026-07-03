@@ -17,6 +17,7 @@ import {
 import { format } from "date-fns";
 import { ReplyQuote } from "./reply-quote";
 import { MessageReactions } from "./message-reactions";
+import { useTranslations } from "next-intl";
 
 interface MessageBubbleProps {
   message: Message;
@@ -117,6 +118,7 @@ function MediaImage({ url, alt }: { url: string; alt: string }) {
 }
 
 function MessageContent({ message }: { message: Message }) {
+  const t = useTranslations('messageBubble');
   switch (message.content_type) {
     case "text":
       return (
@@ -129,9 +131,9 @@ function MessageContent({ message }: { message: Message }) {
       return (
         <div>
           {message.media_url ? (
-            <MediaImage url={message.media_url} alt="Shared image" />
+            <MediaImage url={message.media_url} alt={t('sharedImage')} />
           ) : (
-            <MediaUnavailable label="Image" />
+            <MediaUnavailable label={t('image')} />
           )}
           {message.content_text && (
             <p className="mt-1 whitespace-pre-wrap break-words text-sm">
@@ -151,7 +153,7 @@ function MessageContent({ message }: { message: Message }) {
               className="max-h-64 max-w-60 rounded-lg"
             />
           ) : (
-            <MediaUnavailable label="Video" />
+            <MediaUnavailable label={t('video')} />
           )}
           {message.content_text && (
             <p className="mt-1 whitespace-pre-wrap break-words text-sm">
@@ -167,7 +169,7 @@ function MessageContent({ message }: { message: Message }) {
           {message.media_url ? (
             <audio src={message.media_url} controls className="max-w-60" />
           ) : (
-            <MediaUnavailable label="Audio" />
+            <MediaUnavailable label={t('audio')} />
           )}
         </div>
       );
@@ -248,6 +250,7 @@ export function MessageBubble({
   currentUserId,
   onToggleReaction,
 }: MessageBubbleProps) {
+  const t = useTranslations('messageBubble');
   const isAgent = message.sender_type === "agent" || message.sender_type === "bot";
   const time = format(new Date(message.created_at), "HH:mm");
 

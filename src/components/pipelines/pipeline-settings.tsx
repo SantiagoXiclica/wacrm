@@ -35,6 +35,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 const STAGE_COLORS = [
   "#3b82f6",
@@ -68,6 +69,7 @@ export function PipelineSettings({
   onStagesChanged,
   onCreateNewPipeline,
 }: PipelineSettingsProps) {
+  const t = useTranslations('pipelineSettings');
   const supabase = createClient();
 
   const [name, setName] = useState(pipeline.name);
@@ -194,14 +196,14 @@ export function PipelineSettings({
     }
     onOpenChange(false);
     onPipelinesChanged();
-    toast.success("Pipeline deleted");
+    toast.success(t('pipelineDeleted'));
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-popover border-border max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-popover-foreground">Manage Pipeline</DialogTitle>
+          <DialogTitle className="text-popover-foreground">{t('managePipeline')}</DialogTitle>
         </DialogHeader>
 
         {showDeleteConfirm ? (
@@ -210,11 +212,10 @@ export function PipelineSettings({
               <AlertTriangle className="h-5 w-5 shrink-0 text-red-400" />
               <div>
                 <p className="text-sm font-medium text-red-400">
-                  Delete Pipeline
+                  {t('deletePipeline')}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  This will archive all deals in this pipeline. This cannot be
-                  undone.
+                  {t('deleteConfirm')}
                 </p>
               </div>
             </div>
@@ -231,7 +232,7 @@ export function PipelineSettings({
                 disabled={deleting}
                 className="bg-red-600 text-white hover:bg-red-700"
               >
-                {deleting ? "Deleting..." : "Delete Pipeline"}
+                {deleting ? t('deleting') : t('deletePipeline')}
               </Button>
             </div>
           </div>
@@ -239,7 +240,7 @@ export function PipelineSettings({
           <>
             <div className="grid gap-4 py-2">
               <div className="grid gap-2">
-                <Label className="text-muted-foreground">Pipeline Name</Label>
+                <Label className="text-muted-foreground">{t('pipelineName')}</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -248,7 +249,7 @@ export function PipelineSettings({
               </div>
 
               <div className="grid gap-2">
-                <Label className="text-muted-foreground">Stages</Label>
+                <Label className="text-muted-foreground">{t('stages')}</Label>
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -304,7 +305,7 @@ export function PipelineSettings({
                   <Input
                     value={newStageName}
                     onChange={(e) => setNewStageName(e.target.value)}
-                    placeholder="New stage name"
+                    placeholder={t('newStagePlaceholder')}
                     className="border-border bg-muted text-sm text-foreground"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleAddStage();
@@ -376,6 +377,7 @@ function SortableStageRow({
   onRemove: () => void;
   colors: string[];
 }) {
+  const t = useTranslations('pipelineSettings');
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: stage.id });
 
@@ -396,7 +398,7 @@ function SortableStageRow({
         {...attributes}
         {...listeners}
         className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
-        aria-label="Drag to reorder"
+        aria-label={t('dragToReorder')}
       >
         <GripVertical className="h-4 w-4" />
       </button>

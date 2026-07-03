@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, ArrowRight, Eye, ImageIcon, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type VariableType = 'static' | 'field' | 'custom_field';
 
@@ -76,6 +77,7 @@ export function Step3Personalize({
   onNext,
   onBack,
 }: Step3Props) {
+  const t = useTranslations('broadcastSteps');
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [loadingFields, setLoadingFields] = useState(true);
   const [firstContact, setFirstContact] = useState<Contact | null>(null);
@@ -235,10 +237,9 @@ export function Step3Personalize({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Personalize Message</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t('personalizeMessage')}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Map template variables to contact fields, custom fields, or static
-          values.
+          {t('personalizeDesc')}
         </p>
       </div>
 
@@ -246,13 +247,13 @@ export function Step3Personalize({
         <div className="rounded-xl border border-border bg-card/50 p-4">
           <div className="mb-3 flex items-center gap-2">
             <ImageIcon className="h-4 w-4 text-primary" />
-            <p className="text-sm font-medium text-foreground">Header media</p>
+            <p className="text-sm font-medium text-foreground">{t('headerMedia')}</p>
             <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium uppercase text-primary">
               {mediaHeaderType}
             </span>
           </div>
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-            Media URL
+            {t('mediaUrl')}
           </label>
           <Input
             type="url"

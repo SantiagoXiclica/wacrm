@@ -14,6 +14,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
+import { useTranslations } from 'next-intl';
 
 interface DocSummary {
   id: string;
@@ -33,6 +34,8 @@ export function AiKnowledgeCard({
   canEdit: boolean;
   hasEmbeddingsKey: boolean;
 }) {
+  const t = useTranslations('settingsPanels');
+  const tc = useTranslations('common');
   const [docs, setDocs] = useState<DocSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<EditTarget>(null);
@@ -200,7 +203,7 @@ export function AiKnowledgeCard({
                           size="sm"
                           className="h-8 w-8 p-0"
                           onClick={() => void openEdit(doc.id)}
-                          title="Edit"
+                          title={tc('edit')}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -209,7 +212,7 @@ export function AiKnowledgeCard({
                           size="sm"
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                           onClick={() => void remove(doc.id)}
-                          title="Delete"
+                          title={tc('delete')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

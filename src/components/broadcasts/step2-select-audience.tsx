@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   X,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type AudienceType = 'all' | 'tags' | 'custom_field' | 'csv';
 type CustomFieldOperator = 'is' | 'is_not' | 'contains';
@@ -83,6 +84,7 @@ export function Step2SelectAudience({
   onNext,
   onBack,
 }: Step2Props) {
+  const t = useTranslations('broadcastSteps');
   const [tags, setTags] = useState<Tag[]>([]);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
@@ -249,9 +251,9 @@ export function Step2SelectAudience({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Select Audience</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t('selectAudience')}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choose who will receive this broadcast.
+          {t('selectAudienceDesc')}
         </p>
       </div>
 

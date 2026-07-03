@@ -41,6 +41,7 @@ import {
   type ApiScope,
 } from '@/lib/api-keys/scopes';
 import { SettingsPanelHead } from './settings-panel-head';
+import { useTranslations } from 'next-intl';
 
 interface ApiKey {
   id: string;
@@ -69,6 +70,7 @@ function keyStatus(k: ApiKey): 'active' | 'revoked' | 'expired' {
 }
 
 export function ApiKeysSettings() {
+  const t = useTranslations('settingsPanels');
   const { canEditSettings } = useAuth();
 
   const [keys, setKeys] = useState<ApiKey[]>([]);
@@ -135,20 +137,15 @@ export function ApiKeysSettings() {
   return (
     <section className="animate-in fade-in-50 space-y-6 duration-200">
       <SettingsPanelHead
-        title="API keys"
+        title={t('apiKeysTitle')}
         description={
-          <>
-            Keys authenticate the public REST API (
-            <code className="text-xs">/api/v1</code>) so you can build your own
-            automations. Send them as{' '}
-            <code className="text-xs">Authorization: Bearer &lt;key&gt;</code>.
-          </>
+          t('apiKeysDesc')
         }
         action={
           <RequireRole min="admin">
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />
-              New API key
+              {t('newApiKey')}
             </Button>
           </RequireRole>
         }
@@ -159,16 +156,15 @@ export function ApiKeysSettings() {
           <CardContent className="flex flex-col items-center justify-center py-10 text-center">
             <KeyRound className="text-muted-foreground size-6" />
             <p className="text-muted-foreground mt-2 text-sm">
-              No API keys yet.
+              {t('noApiKeys')}
             </p>
             {canEditSettings ? (
               <p className="text-muted-foreground mt-1 text-xs">
-                Click <span className="text-foreground">New API key</span> to
-                create one.
+                {t('createApiKeyHint')}
               </p>
             ) : (
               <p className="text-muted-foreground mt-1 text-xs">
-                Ask an admin to create one.
+                {t('askAdminHint')}
               </p>
             )}
           </CardContent>
@@ -286,6 +282,7 @@ function CreateKeyDialog({
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
 }) {
+  const t = useTranslations('settingsPanels');
   const [name, setName] = useState('');
   const [scopes, setScopes] = useState<ApiScope[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -356,16 +353,15 @@ function CreateKeyDialog({
           <>
             <DialogHeader>
               <DialogTitle className="text-popover-foreground">
-                Copy your API key
+                {t('copyApiKey')}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                This is the only time the full key is shown. Store it somewhere
-                safe — if you lose it, revoke it and create a new one.
+                {t('copyApiKeyDesc')}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-1.5">
-              <Label className="text-muted-foreground">API key</Label>
+              <Label className="text-muted-foreground">{t('apiKey')}</Label>
               <div className="flex gap-2">
                 <Input
                   readOnly
@@ -375,7 +371,7 @@ function CreateKeyDialog({
                 />
                 <Button type="button" variant="outline" onClick={copyKey}>
                   <Copy className="size-4" />
-                  Copy
+                  {t('copy')}
                 </Button>
               </div>
             </div>
@@ -387,7 +383,7 @@ function CreateKeyDialog({
                   onOpenChange(false);
                 }}
               >
-                Done
+                {t('done')}
               </Button>
             </DialogFooter>
           </>
@@ -395,30 +391,29 @@ function CreateKeyDialog({
           <>
             <DialogHeader>
               <DialogTitle className="text-popover-foreground">
-                New API key
+                {t('newApiKeyTitle')}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                Name it after the integration that will use it, and grant only
-                the scopes it needs.
+                {t('newApiKeyDesc')}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="api-key-name" className="text-muted-foreground">
-                  Name
+                  {t('nameLabel')}
                 </Label>
                 <Input
                   id="api-key-name"
                   value={name}
                   maxLength={80}
-                  placeholder="e.g. Zapier automation"
+                  placeholder={t('namePlaceholder')}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-muted-foreground">Scopes</Label>
+                <Label className="text-muted-foreground">{t('scopes')}</Label>
                 <div className="border-border space-y-2 rounded-md border p-3">
                   {API_SCOPES.map((scope) => (
                     <label

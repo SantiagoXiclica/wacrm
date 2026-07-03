@@ -1,25 +1,44 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DndContext,
   DragOverlay,
-  KeyboardSensor,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
+  closestCenter,
   useDroppable,
   useDraggable,
-  closestCorners,
-  type DragEndEvent,
   type DragStartEvent,
+  type DragEndEvent,
 } from "@dnd-kit/core";
-import type { Deal, PipelineStage } from "@/types";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { DealCard } from "./deal-card";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency } from "@/lib/currency";
+import type { Deal, PipelineStage } from "@/types";
+import { useTranslations } from "next-intl";
+import { useAuth } from "@/hooks/use-auth";
+
+// Translation mapping for default stage names (English → translation keys)
+const STAGE_NAME_MAP: Record<string, string> = {
+  "New Lead": "newLead",
+  "Qualified": "qualified",
+  "Proposal Sent": "proposalSent",
+  "Negotiation": "negotiation",
+  "Won": "won",
+};
+
+function useTranslatedStageName(name: string, t: ReturnType<typeof useTranslations<'pipelines'>>): string {
+  const key = STAGE_NAME_MAP[name];
+  return key ? t(key) : name;
+}
 
 interface PipelineBoardProps {
   stages: PipelineStage[];
@@ -91,7 +110,7 @@ export function PipelineBoard({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
@@ -200,6 +219,8 @@ function StageColumn({
   onAddDeal: (stageId: string) => void;
   onEditDeal: (deal: Deal) => void;
 }) {
+  const t = useTranslations('pipelines');
+  const translatedName = useTranslatedStageName(stage.name, t);
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
   return (
@@ -217,7 +238,7 @@ function StageColumn({
       />
       <div className="flex items-center justify-between pt-3">
         <h3 className="truncate text-sm font-semibold text-foreground">
-          {stage.name}
+          {translatedName}
         </h3>
         <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
           {deals.length}
@@ -237,7 +258,7 @@ function StageColumn({
       >
         {deals.length === 0 ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-border py-10 text-xs text-muted-foreground">
-            Drop a deal here
+            {t('dropDealHere')}
           </div>
         ) : (
           deals.map((deal) => (
@@ -258,7 +279,7 @@ function StageColumn({
         className="mt-3 w-full justify-start border border-dashed border-border bg-transparent text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground"
       >
         <Plus className="mr-1 h-3 w-3" />
-        Add Deal
+        {t('addDeal')}
       </Button>
     </div>
   );

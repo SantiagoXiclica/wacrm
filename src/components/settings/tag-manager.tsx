@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { Tag } from '@/types';
+import { useTranslations } from 'next-intl';
 
 const PRESET_COLORS = [
   { name: 'Red', value: '#ef4444' },
@@ -42,6 +43,7 @@ const PRESET_COLORS = [
  * dialog since it detaches the tag from every contact.
  */
 export function TagManager() {
+  const t = useTranslations('tagManager');
   const supabase = createClient();
   const { user, accountId, loading: authLoading } = useAuth();
 
@@ -96,8 +98,6 @@ export function TagManager() {
         return;
       }
 
-      // account_id is mandatory on every account-scoped insert (NOT
-      // NULL + RLS, no DB default).
       const { error } = await supabase.from('tags').insert({
         user_id: user.id,
         account_id: accountId,
@@ -107,7 +107,7 @@ export function TagManager() {
 
       if (error) throw error;
 
-      toast.success('Tag created');
+      toast.success(t('tagCreated'));
       setNewTagName('');
       setSelectedColor(PRESET_COLORS[3].value);
       await fetchTags(user.id);
@@ -136,8 +136,8 @@ export function TagManager() {
 
       if (error) throw error;
 
-      toast.success('Tag deleted');
-      setTags((prev) => prev.filter((t) => t.id !== tagToDelete.id));
+      toast.success(t('tagDeleted'));
+      setTags((prev) => prev.filter((tag) => tag.id !== tagToDelete.id));
       setDeleteDialogOpen(false);
       setTagToDelete(null);
     } catch (err) {
@@ -153,10 +153,10 @@ export function TagManager() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-foreground">
           <TagIcon className="size-4 text-primary" />
-          Tags
+          {t('title')}
         </CardTitle>
         <CardDescription className="text-muted-foreground">
-          Colour-coded labels for grouping and filtering contacts.
+          {t('description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -196,7 +196,7 @@ export function TagManager() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                No tags yet — create your first one below.
+                {t('noTags')}
               </p>
             )}
 
@@ -253,10 +253,9 @@ export function TagManager() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete tag</DialogTitle>
+            <DialogTitle>{t('deleteTag')}</DialogTitle>
             <DialogDescription>
-              Delete the tag &quot;{tagToDelete?.name}&quot;? This removes it
-              from all contacts and cannot be undone.
+              {t('deleteTagConfirm', { name: tagToDelete?.name ?? '' })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -265,7 +264,7 @@ export function TagManager() {
               onClick={() => setDeleteDialogOpen(false)}
               disabled={deleting}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               variant="destructive"
