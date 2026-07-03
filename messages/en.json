@@ -912,7 +912,16 @@
     "unassigned": "Unassigned",
     "notes": "Notes",
     "notesPlaceholder": "Add notes...",
-    "status": "Status"
+    "status": "Status",
+    "markAsWon": "Mark as Won",
+    "markAsLost": "Mark as Lost",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "createDeal": "Create Deal",
+    "cancel": "Cancel",
+    "deleteDeal": "Delete this deal?",
+    "deleting": "Deleting...",
+    "confirm": "Confirm"
   },
   "pipelineSettings": {
     "managePipeline": "Manage Pipeline",
@@ -924,7 +933,18 @@
     "newStagePlaceholder": "New stage name",
     "dragToReorder": "Drag to reorder",
     "changeColor": "Change color",
-    "pipelineDeleted": "Pipeline deleted"
+    "pipelineDeleted": "Pipeline deleted",
+    "failedToSave": "Failed to save pipeline",
+    "pipelineSaved": "Pipeline saved",
+    "failedToAddStage": "Failed to add stage",
+    "moveOrDeleteDealsFirst": "Move or delete deals in this stage first",
+    "failedToDeleteStage": "Failed to delete stage",
+    "failedToDeletePipeline": "Failed to delete pipeline",
+    "cancel": "Cancel",
+    "add": "Add",
+    "createNewPipeline": "Create a new pipeline",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes"
   },
   "pipelineAnalytics": {
     "totalDeals": "Total Deals",

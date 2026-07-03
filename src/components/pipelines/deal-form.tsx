@@ -408,7 +408,7 @@ export function DealForm({
                     ) : (
                       <>
                         <Check className="mr-1 h-4 w-4" />
-                        Mark as Won
+                        {t('markAsWon')}
                       </>
                     )}
                   </Button>
@@ -423,7 +423,7 @@ export function DealForm({
                     ) : (
                       <>
                         <X className="mr-1 h-4 w-4" />
-                        Mark as Lost
+                        {t('markAsLost')}
                       </>
                     )}
                   </Button>
@@ -450,21 +450,21 @@ export function DealForm({
                 onClick={() => onOpenChange(false)}
                 className="flex-1 border-border bg-transparent text-muted-foreground hover:bg-muted"
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={saving || !title.trim() || !contactId || !stageId}
                 className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {saving ? "Saving..." : deal ? "Save Changes" : "Create Deal"}
+                {saving ? t('saving') : deal ? t('saveChanges') : t('createDeal')}
               </Button>
             </div>
 
             {deal &&
               (confirmDelete ? (
                 <div className="mt-3 flex items-center justify-between gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
-                  <span className="text-red-300">Delete this deal?</span>
+                  <span className="text-red-300">{t('deleteDeal')}</span>
                   <div className="flex gap-1">
                     <button
                       type="button"
@@ -472,7 +472,7 @@ export function DealForm({
                       disabled={deleting}
                       className="rounded px-2 py-1 text-muted-foreground hover:bg-muted"
                     >
-                      Cancel
+                      {t('cancel')}
                     </button>
                     <button
                       type="button"
@@ -480,7 +480,7 @@ export function DealForm({
                       disabled={deleting}
                       className="rounded bg-red-600 px-2 py-1 font-medium text-white hover:bg-red-700 disabled:opacity-50"
                     >
-                      {deleting ? "Deleting..." : "Confirm"}
+                      {deleting ? t('deleting') : t('confirm')}
                     </button>
                   </div>
                 </div>

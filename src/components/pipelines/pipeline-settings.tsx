@@ -129,14 +129,14 @@ export function PipelineSettings({
     setSaving(false);
 
     if (renameRes.error || stagesRes.error) {
-      toast.error("Failed to save pipeline");
+      toast.error(t('failedToSave'));
       return;
     }
 
     onOpenChange(false);
     onPipelinesChanged();
     onStagesChanged();
-    toast.success("Pipeline saved");
+    toast.success(t('pipelineSaved'));
   }
 
   async function handleAddStage() {
@@ -153,7 +153,7 @@ export function PipelineSettings({
       .select()
       .single();
     if (error || !data) {
-      toast.error("Failed to add stage");
+      toast.error(t('failedToAddStage'));
       return;
     }
     setLocalStages([...localStages, data as PipelineStage]);
@@ -168,7 +168,7 @@ export function PipelineSettings({
       .select("id", { count: "exact", head: true })
       .eq("stage_id", stageId);
     if (count && count > 0) {
-      toast.error("Move or delete deals in this stage first");
+      toast.error(t('moveOrDeleteDealsFirst'));
       return;
     }
     const { error } = await supabase
@@ -176,7 +176,7 @@ export function PipelineSettings({
       .delete()
       .eq("id", stageId);
     if (error) {
-      toast.error("Failed to delete stage");
+      toast.error(t('failedToDeleteStage'));
       return;
     }
     setLocalStages(localStages.filter((s) => s.id !== stageId));
@@ -191,7 +191,7 @@ export function PipelineSettings({
       .eq("id", pipeline.id);
     setDeleting(false);
     if (error) {
-      toast.error("Failed to delete pipeline");
+      toast.error(t('failedToDeletePipeline'));
       return;
     }
     onOpenChange(false);
@@ -225,7 +225,7 @@ export function PipelineSettings({
                 onClick={() => setShowDeleteConfirm(false)}
                 className="border-border bg-transparent text-muted-foreground hover:bg-muted"
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleDeletePipeline}
@@ -319,7 +319,7 @@ export function PipelineSettings({
                     className="shrink-0 border-border bg-transparent text-muted-foreground hover:bg-muted"
                   >
                     <Plus className="mr-1 h-3 w-3" />
-                    Add
+                    {t('add')}
                   </Button>
                 </div>
               </div>
@@ -330,7 +330,7 @@ export function PipelineSettings({
                 className="w-full border-border bg-transparent text-muted-foreground hover:bg-muted"
               >
                 <Plus className="mr-1 h-3 w-3" />
-                Create a new pipeline
+                {t('createNewPipeline')}
               </Button>
             </div>
 
@@ -340,21 +340,21 @@ export function PipelineSettings({
                 onClick={() => setShowDeleteConfirm(true)}
                 className="mr-auto bg-red-600 hover:bg-red-700"
               >
-                Delete Pipeline
+                {t('deletePipeline')}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 className="border-border bg-transparent text-muted-foreground hover:bg-muted"
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={saving || !name.trim()}
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {saving ? "Saving..." : "Save Changes"}
+                {saving ? t('saving') : t('saveChanges')}
               </Button>
             </DialogFooter>
           </>

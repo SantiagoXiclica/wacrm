@@ -911,7 +911,16 @@
     "unassigned": "Sin asignar",
     "notes": "Notas",
     "notesPlaceholder": "Agregar notas...",
-    "status": "Estado"
+    "status": "Estado",
+    "markAsWon": "Marcar como Ganada",
+    "markAsLost": "Marcar como Perdida",
+    "saving": "Guardando...",
+    "saveChanges": "Guardar cambios",
+    "createDeal": "Crear oferta",
+    "cancel": "Cancelar",
+    "deleteDeal": "¿Eliminar esta oferta?",
+    "deleting": "Eliminando...",
+    "confirm": "Confirmar"
   },
   "pipelineSettings": {
     "managePipeline": "Gestionar embudo",
@@ -923,7 +932,18 @@
     "newStagePlaceholder": "Nombre de la nueva etapa",
     "dragToReorder": "Arrastra para reordenar",
     "changeColor": "Cambiar color",
-    "pipelineDeleted": "Embudo eliminado"
+    "pipelineDeleted": "Embudo eliminado",
+    "failedToSave": "Error al guardar el embudo",
+    "pipelineSaved": "Embudo guardado",
+    "failedToAddStage": "Error al agregar la etapa",
+    "moveOrDeleteDealsFirst": "Mueve o elimina las ofertas en esta etapa primero",
+    "failedToDeleteStage": "Error al eliminar la etapa",
+    "failedToDeletePipeline": "Error al eliminar el embudo",
+    "cancel": "Cancelar",
+    "add": "Agregar",
+    "createNewPipeline": "Crear un nuevo embudo",
+    "saving": "Guardando...",
+    "saveChanges": "Guardar cambios"
   },
   "pipelineAnalytics": {
     "totalDeals": "Total de ofertas",
