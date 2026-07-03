@@ -390,10 +390,6 @@ export function AiConfig() {
                 <p className="text-xs text-muted-foreground">
                   {t('enableAiDesc')}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Master switch. Turns on the “Draft with AI” button in the
-                  inbox.
-                </p>
               </div>
               <Switch
                 checked={isActive}
@@ -409,11 +405,6 @@ export function AiConfig() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {t('autoReplyDesc')}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  The bot answers new inbound messages automatically (only when
-                  no flow handles them and no agent is assigned). Hands off to a
-                  human when it can’t help.
                 </p>
               </div>
               <Switch

@@ -58,6 +58,20 @@ const TEMPLATE_ICON: Record<TemplateSlug, typeof Zap> = {
   follow_up_reminder: PhoneCall,
 }
 
+const TEMPLATE_NAME_KEYS: Record<TemplateSlug, string> = {
+  welcome_message: "templateWelcomeMessage",
+  out_of_office: "templateOutOfOffice",
+  lead_qualifier: "templateLeadQualifier",
+  follow_up_reminder: "templateFollowUpReminder",
+}
+
+const TEMPLATE_DESC_KEYS: Record<TemplateSlug, string> = {
+  welcome_message: "templateWelcomeMessageDesc",
+  out_of_office: "templateOutOfOfficeDesc",
+  lead_qualifier: "templateLeadQualifierDesc",
+  follow_up_reminder: "templateFollowUpReminderDesc",
+}
+
 export default function AutomationsPage() {
   const router = useRouter()
   const t = useTranslations("automations")
@@ -183,8 +197,10 @@ export default function AutomationsPage() {
           <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{t("quickStartTemplates")}</h2>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {TEMPLATE_ORDER.map((slug) => {
-              const t = AUTOMATION_TEMPLATES[slug]
+              const template = AUTOMATION_TEMPLATES[slug]
               const Icon = TEMPLATE_ICON[slug]
+              const nameKey = TEMPLATE_NAME_KEYS[slug]
+              const descKey = TEMPLATE_DESC_KEYS[slug]
               return (
                 <button
                   key={slug}
@@ -194,8 +210,8 @@ export default function AutomationsPage() {
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/15">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <div className="text-sm font-semibold text-foreground">{t.name}</div>
-                  <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+                  <div className="text-sm font-semibold text-foreground">{t(nameKey)}</div>
+                  <p className="mt-1 text-xs text-muted-foreground">{t(descKey)}</p>
                 </button>
               )
             })}

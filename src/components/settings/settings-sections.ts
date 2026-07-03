@@ -48,23 +48,23 @@ export interface SectionMeta {
 }
 
 export const SECTION_META: Record<SettingsSection, SectionMeta> = {
-  overview: { id: 'overview', label: 'Overview', icon: LayoutGrid, group: 'top' },
-  profile: { id: 'profile', label: 'Your profile', icon: User, group: 'account' },
-  security: { id: 'security', label: 'Login & security', icon: Shield, group: 'account' },
-  appearance: { id: 'appearance', label: 'Appearance', icon: Palette, group: 'account' },
-  whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
-  templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
-  fields: { id: 'fields', label: 'Fields & tags', icon: Tags, group: 'workspace' },
-  deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace' },
-  members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
-  ai: { id: 'ai', label: 'AI Assistant', icon: Sparkles, group: 'workspace' },
-  api: { id: 'api', label: 'API keys', icon: KeyRound, group: 'workspace' },
+  overview: { id: 'overview', label: 'overview', icon: LayoutGrid, group: 'top' },
+  profile: { id: 'profile', label: 'yourProfile', icon: User, group: 'account' },
+  security: { id: 'security', label: 'loginSecurity', icon: Shield, group: 'account' },
+  appearance: { id: 'appearance', label: 'appearanceLabel', icon: Palette, group: 'account' },
+  whatsapp: { id: 'whatsapp', label: 'whatsappLabel', icon: PlugZap, group: 'workspace' },
+  templates: { id: 'templates', label: 'templatesLabel', icon: FileText, group: 'workspace' },
+  fields: { id: 'fields', label: 'fieldsAndTagsLabel', icon: Tags, group: 'workspace' },
+  deals: { id: 'deals', label: 'dealsAndCurrencyLabel', icon: Coins, group: 'workspace' },
+  members: { id: 'members', label: 'teamMembersLabel', icon: UsersRound, group: 'workspace' },
+  ai: { id: 'ai', label: 'aiAssistantLabel', icon: Sparkles, group: 'workspace' },
+  api: { id: 'api', label: 'apiKeysLabel', icon: KeyRound, group: 'workspace' },
 };
 
 export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [
   { label: null, group: 'top' },
-  { label: 'Account', group: 'account' },
-  { label: 'Workspace', group: 'workspace' },
+  { label: 'accountGroup', group: 'account' },
+  { label: 'workspaceGroup', group: 'workspace' },
 ];
 
 function isSection(value: string | null): value is SettingsSection {

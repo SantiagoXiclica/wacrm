@@ -228,12 +228,12 @@ export function ContactForm({
       <DialogContent className="bg-popover border-border text-popover-foreground sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-popover-foreground">
-            {isEdit ? 'Edit Contact' : 'Add Contact'}
+            {isEdit ? t('editContact') : t('addContact')}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
             {isEdit
-              ? 'Update the contact details below.'
-              : 'Fill in the details to create a new contact.'}
+              ? t('editDescription')
+              : t('addDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -327,15 +327,15 @@ export function ContactForm({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-muted-foreground">Tags</Label>
+            <Label className="text-muted-foreground">{t('tags')}</Label>
             {loadingTags ? (
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Loader2 className="size-3 animate-spin" />
-                Loading tags...
+                {t('loadingTags')}
               </div>
             ) : tags.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                No tags available. Create tags in Settings.
+                {t('noTagsAvailable')}
               </p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
@@ -372,7 +372,7 @@ export function ContactForm({
               onClick={() => onOpenChange(false)}
               className="border-border text-muted-foreground hover:bg-muted"
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
@@ -380,7 +380,7 @@ export function ContactForm({
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {saving && <Loader2 className="size-4 animate-spin" />}
-              {isEdit ? 'Update' : 'Create'}
+              {isEdit ? t('update') : t('create')}
             </Button>
           </DialogFooter>
         </form>

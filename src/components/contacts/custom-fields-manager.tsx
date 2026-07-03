@@ -184,7 +184,7 @@ export function CustomFieldsPanel() {
               void handleCreate();
             }
           }}
-          placeholder="New field name…"
+          placeholder={t('newFieldPlaceholder')}
           className="bg-muted text-foreground"
         />
         <Button
@@ -197,7 +197,7 @@ export function CustomFieldsPanel() {
           ) : (
             <Plus className="size-4" />
           )}
-          Add
+          {t('add')}
         </Button>
       </div>
 
@@ -206,11 +206,11 @@ export function CustomFieldsPanel() {
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            Loading…
+            {t('loading')}
           </div>
         ) : fields.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            No custom fields yet.
+            {t('noFields')}
           </p>
         ) : (
           <ul className="divide-y divide-border">

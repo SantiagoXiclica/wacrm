@@ -242,7 +242,7 @@ export function TagManager() {
                 ) : (
                   <Plus className="size-4" />
                 )}
-                Add tag
+                {t('addTag')}
               </Button>
             </div>
           </>
