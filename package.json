@@ -24,11 +24,12 @@
     "self-hosted",
     "template"
   ],
+  "packageManager": "pnpm@11.9.0",
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 5644",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
