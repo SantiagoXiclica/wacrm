@@ -1,152 +1,224 @@
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+Next.js 16 tiene breaking changes — APIs, convenciones y estructura de
+archivos pueden diferir de tus datos de entrenamiento. ANTES de escribir
+código, lee la guía relevante en `node_modules/next/dist/docs/`. Respeta
+los avisos de deprecación. Si dudas sobre una API, búscala ahí; no la asumas.
 <!-- END:nextjs-agent-rules -->
 
-<!-- BEGIN:nexia-crm-guide -->
-# NEXIA-CRM — Portal Completo
+# NEXIA-CRM — Instrucciones para Agentes de IA
 
-CRM autogestionable (self-hosted) para WhatsApp Business API construido con **Next.js 16**, **Supabase** y **React 19**.
+CRM autogestionable (self-hosted) para WhatsApp Business API sobre
+**Next.js 16**, **Supabase** y **React 19**. Fork de wacrm personalizado
+para Colombia.
 
-## Stack
+## 0. Reglas críticas (leer primero)
 
-| Capa       | Tecnología                                   |
-|------------|----------------------------------------------|
-| Frontend   | Next.js 16 (App Router), React 19, Tailwind v4, shadcn/ui |
-| Backend    | Next.js API Routes, Supabase (Postgres + Auth + Storage + RLS) |
-| Lenguaje   | TypeScript ~6, Vitest                        |
-| WhatsApp   | Meta Cloud API v21.0                         |
-| IA         | OpenAI / Anthropic (BYOK), pgvector + FTS    |
-| Paquetería | pnpm                                         |
+### Secrets y variables de entorno
+- **NUNCA** leas `.env`, `.env.local` ni ningún archivo con valores reales.
+  Contienen secretos sensibles (service-role key, ENCRYPTION_KEY,
+  META_APP_SECRET, tokens de acceso).
+- La ú́nica referencia de nombres de vars es **`.env.local.example`** .
+  Léelo para saber qué vars existen; sus ejemplos comentados
+  (`sbp_asda...` = Supabase MCP token, `sb_publishable_...` = Supabase
+  access token, `your-64-char-hex-key-here` = AES key, etc.) permiten
+  inferir el tipo de cada token SIN exponer valores reales.
+- Accede a las vars vía `process.env.NOMBRE_VAR`. Usa `!` solo cuando
+  sea obligatoria (ver patrón en `src/lib/supabase/server.ts`).
+- **Server-only** (`SUPABASE_SERVICE_ROLE_KEY`, `META_APP_SECRET`,
+  `ENCRYPTION_KEY`, `SUPABASE_ACCESS_TOKEN`): NUNCA las expongas en
+  código cliente ni les pongas prefijo `NEXT_PUBLIC_`. Verifica con
+  `grep` si una var server-only aparece en un archivo `.tsx` o en
+  una carpeta de cliente.
+- Nunca imprimas, loguees ni incluyas en diffs valores de env vars,
+  tokens, keys ni secrets.
 
-## Personalización Colombia
+### Decisiones críticas — preguntar antes de continuar
+Detente y pregunta cuando haya:
+- Más de un enfoque razonable con impacto distinto.
+- Cambios en esquema/DB (migraciones), RLS, auth, webhooks o encriptación.
+- Elección de librería nueva, cambio de patrón arquitectónico o de API
+  pública.
+- Eliminación de código o ruptura de compatibilidad (breaking change).
+- Dudas sobre el comportamiento esperado, datos sensibles o impacto en
+  producción.
+No asumas: resume el plan y espera aprobación.
 
-- **Idioma:** Español (`es`) — default en next-intl
-- **Moneda:** COP (Peso Colombiano) — `DEFAULT_CURRENCY = "COP"` en `src/lib/currency.ts`, agregado al listado `CURRENCIES`
-- **Zona horaria:** Bogotá (UTC-5 / `America/Bogotá`) — usar en fechas, schedules, cron y logs
-- **Formato de fecha:** DD/MM/AAAA — configurar `Intl.DateTimeFormat` con locale `es-CO`
-- **Formato numérico:** punto como separador de miles, coma como separador decimal (ej. $1.234.567,89)
+### Código mantenible y escalable
+- DRY/KISS. Antes de construir desde cero, verifica si ya existe una
+  utilidad (busca en `src/lib/`). Reutiliza antes que duplicar.
+- Funciones pequeñas y puras cuando sea posible; I/O aislada y testeable
+  (ver patrón en `src/lib/auth/roles.ts` — lógica sin I/O + tests puros).
+- Tipos estrictos, sin `any` (usa `unknown` y narrowing). Evita casteos
+  innecesarios.
+- Cada convención es un solo source of truth:
+  - RBAC → predicados en `roles.ts`
+  - Moneda → `currency.ts` + columna `accounts.default_currency`
+  - Roles de cuenta → `account_role_enum` en SQL
+- Piensa en el siguiente cambio: nombres claros, documenta el *por qué*
+  (no el qué), deja extensión fácil.
+- Prefiere async/await sobre `.then()`; evita promesas colgadas
+  (unhandled rejections).
 
-## Módulos del Portal
+## 1. Stack (versiones pinneadas)
 
-### 1. Autenticación y Autorización
-- **Auth:** Supabase Auth (email/password, magic links, password reset)
-- **Middleware:** `src/middleware.ts` — session cookie + token refresh, protege rutas dashboard, redirects auth
-- **RBAC:** 4 roles — `owner > admin > agent > viewer`
-- **Multi-tenencia:** cada usuario tiene su `accounts`, miembros via invite links (SHA-256)
-- **3 capas de enforcement:** DB RLS (`is_account_member()`), servidor (`requireRole()`), cliente (`<RequireRole>`)
-- **Páginas:** `/login`, `/signup`, `/forgot-password`, `/join/[token]`
+| Capa       | Tecnología                                               |
+|------------|----------------------------------------------------------|
+| Frontend   | Next.js 16.2.6 (App Router), React 19.2, Tailwind v4, shadcn/ui, Recharts |
+| Backend    | Next.js API Routes, Supabase (Postgres + Auth + Storage + Realtime + RLS) |
+| Lenguaje   | TypeScript 6 (strict), pnpm 11.9, Node ≥20               |
+| WhatsApp   | Meta Cloud API v21.0 (send, media, templates, interactive) |
+| IA         | OpenAI / Anthropic BYOK, pgvector + FTS                  |
+| Tests      | Vitest 4 (co-located `*.test.ts`)                        |
 
-### 2. Dashboard (`/dashboard`)
-- Métricas: conversaciones activas, contactos nuevos hoy, valor de deals abiertos, mensajes enviados hoy (vs ayer)
-- Charts: conversaciones en el tiempo (Recharts), tiempo de respuesta por día de semana
-- Donut de pipeline (deals por etapa)
-- Feed de actividad multi-módulo
-- Quick actions
+## 2. Setup y comandos
 
-### 3. Bandeja Compartida — Inbox (`/inbox`)
-- Conversaciones multi-agente en un mismo número WhatsApp
-- Asignación de conversaciones con presencia en tiempo real
-- Composer con soporte para: texto, imágenes, video, documentos, audio, notas de voz (opus-recorder), plantillas, drafts con IA
-- Message quoting, emoji reactions
-- Status tracking (sending/sent/delivered/read/failed)
-- Contact sidebar con datos del contacto
+```bash
+pnpm install                         # instalar dependencias
+pnpm dev                             # dev server en puerto 5644
+pnpm build                           # build producción (incluye typecheck)
+pnpm typecheck                       # tsc --noEmit (rápido)
+pnpm lint                            # eslint
+pnpm format                          # prettier --write .
+pnpm format:check                    # prettier check-only (CI)
+pnpm test                            # vitest run
+pnpm test:watch                      # vitest en watch
+```
 
-### 4. Contactos (`/contacts`)
-- CRUD con teléfono (E.164), nombre, email, empresa, avatar
-- Tags many-to-many con colores
-- Campos personalizados (tipo texto, JSONB options)
-- Notas por contacto
-- Importación CSV con resolución de tags
-- Deduplicación por teléfono
+## 3. Estructura del código (resumen)
 
-### 5. Pipeline de Ventas (`/pipelines`)
-- Múltiples pipelines con etapas configurables
-- Kanban drag-and-drop (@dnd-kit)
-- Deals: título, valor, moneda, estado (open/won/lost), fecha cierre, agente asignado
-- Deals vinculados a contactos y conversaciones
-- Analytics del pipeline
+| Ruta | Propósito |
+|------|-----------|
+| `src/app/(auth)/` | Páginas de auth (login, signup, forgot-password) |
+| `src/app/(dashboard)/` | Dashboard (inbox, contacts, pipelines, broadcasts, automations, flows, settings) |
+| `src/app/api/` | API Routes: `v1/` (pública), `whatsapp/` (webhooks), `ai/`, `account/`, `automations/`, `flows/` |
+| `src/components/ui/` | Primitivas shadcn/ui |
+| `src/hooks/` | React hooks (auth, realtime, presence, RBAC, unread) |
+| `src/lib/` | Lógica server-side y compartida (auth, whatsapp, ai, automations, flows, webhooks, contacts, api-keys) |
+| `src/lib/supabase/` | Clientes Supabase (`server.ts` SSR, `client.ts` browser) |
+| `src/lib/whatsapp/` | Integración Meta Cloud API (send, templates, media, encryption, phone-utils) |
+| `src/lib/auth/` | Auth, roles, API context, invitations |
+| `src/types/` | Tipos globales (index.ts, opus-recorder.d.ts) |
+| `src/i18n/` | Configuración de next-intl (`request.ts`) |
+| `supabase/migrations/` | Migraciones SQL numeradas (001–030) |
+| `docs/` | Documentación: `schema.md` (arquitectura completa), `public-api.md`, `road_map.md` |
 
-### 6. Broadcasts (`/broadcasts`)
-- Wizard de 4 pasos: elegir plantilla Meta → seleccionar audiencia → personalizar variables → programar/enviar
-- Tracking por webhook: sent/delivered/read/replied/failed
-- Agregados O(1) via DB triggers
-- API: hasta 1000 destinatarios por request
+👉 **Arquitectura detallada** (864 líneas, cada módulo con tablas, RLS,
+   endpoints e invariantes): **`docs/schema.md`**
 
-### 7. Automaciones (`/automations`)
-- **Triggers:** `new_message_received`, `keyword_match`, `new_contact_created`, `conversation_assigned`, `tag_added`, `scheduled` (cron)
-- **Acciones:** send_message, send_template, add_tag/remove_tag, condition, wait, assign_conversation, update_contact_field, create_deal, send_webhook, close_conversation
-- Engine completo con logging atómico, cola de ejecución pendiente, resumen por cron
+## 4. Personalización Colombia
 
-### 8. Flows Conversacionales (`/flows`)
-- Builder visual con @xyflow/react (React Flow)
-- **10 tipos de nodo:** start, send_message, send_buttons, send_list, send_media, collect_input, condition, set_tag, handoff, http_fetch, end
-- **Triggers:** keyword, first_inbound_message, manual
-- Política de fallback configurable (reprompt/handoff/ignore)
-- Engine: invariante de active run por contacto, idempotencia, OCC, timeouts por cron
+- **Idioma:** español (`es`) — default en next-intl; mensajes en
+  `messages/es.json` (y `en.json` como fallback).
+- **Zona horaria:** `America/Bogota` (UTC-5) para fechas, schedules,
+  cron jobs, logs y `Intl.DateTimeFormat`.
+- **Formato fecha:** DD/MM/AAAA, locale `es-CO`.
+- **Formato numérico:** punto como separador de miles, coma como
+  separador decimal (ej. $1.234.567,89).
+- **Moneda — ⚠️ META PENDIENTE:** el objetivo es **COP** como default,
+  pero el código actual usa **USD** (`DEFAULT_CURRENCY = "USD"` en
+  `src/lib/currency.ts:14`) y COP no está en `CURRENCIES`. Ver item 1
+  en `pendientes.md`. Mientras, toda feature financiera usa
+  `formatCurrency()` con la moneda de la cuenta (columna
+  `accounts.default_currency`).
 
-### 9. Asistente IA (`/api/ai/*`)
-- **BYOK:** OpenAI o Anthropic, API key almacenada AES-256-GCM
-- Drafts con 1 clic en el inbox
-- Auto-reply bot con tope por conversación y handoff por sentinel
-- **Knowledge Base (RAG):** documentos FAQ/policy/product, chunking + embeddings (text-embedding-3-small), híbrido FTS + pgvector
-- API: `/draft`, `/config`, `/knowledge/*`, `/test`
+## 5. Convenciones de código
 
-### 10. Configuración (`/settings`) — 11 secciones
-| Sección       | Descripción                                   |
-|---------------|-----------------------------------------------|
-| Overview      | Landing de settings                           |
-| Profile       | Nombre, email, avatar                         |
-| Security      | Cambio contraseña, sesiones                   |
-| Appearance    | Tema, locale                                  |
-| WhatsApp      | Número, WABA, credenciales, registro          |
-| Templates     | Plantillas Meta (crear/sync/editar/borrar)    |
-| Fields & Tags | Campos personalizados + tags                  |
-| Deals         | Etapas de pipeline, moneda por defecto        |
-| Members       | Miembros, invitar, roles, remover             |
-| AI Assistant  | Provider, modelo, API key, system prompt, auto-reply, KB |
-| API Keys      | Crear/revocar API keys con scopes             |
+- **Imports:** alias `@/*` -> `./src/*`. ESM imports siempre, sin `require()`.
+- **Exports:** named exports siempre. Default exports solo para páginas
+  Next.js (App Router lo requiere).
+- **Server vs client:** las API routes y `src/lib/*` con I/O de server
+  corren en Node. Los componentes con interactividad llevan
+  `'use client'`. Las env vars server-only nunca cruzan a cliente.
+- **RBAC:** usa los **predicados** de `src/lib/auth/roles.ts`
+  (`canManageMembers`, `canEditSettings`, `canSendMessages`,
+  `canViewOnly`, `canDeleteAccount`, `canTransferOwnership`) en lugar
+  de comparar strings de rol. Esto mantiene la política en un solo
+  archivo.
+- **Multi-tenencia:** toda tabla lleva `account_id` REFERENCES. RLS
+  enforcement vía `is_account_member(account_id, min_role)`. En
+  server-side sin sesión (API pública), filtrar explícitamente por
+  `accountId` del contexto (ver `api-context.ts`).
+- **Encriptación:** secrets de WhatsApp se guardan AES-256-GCM
+  (formato `iv:ct:tag`). Usar `encrypt()` / `decrypt()` de
+  `src/lib/whatsapp/encryption.ts`. La key está en
+  `process.env.ENCRYPTION_KEY` (64 hex chars).
+- **Tests:** co-localizados (`*.test.ts` junto al fuente). Usa Vitest.
+  Prioriza lógica pura (tipos, validadores, transformaciones) sobre
+  tests de integración.
+- **Comentarios:** documenta el *por qué*, no el *qué* ni el *cómo*.
+  Sin comentarios obvios.
 
-### 11. API Pública REST (`/api/v1`)
-- **Auth:** Bearer token (`wacrm_live_*`), SHA-256 hash, scopes
-- **Scopes:** messages:send/read, contacts:read/write, conversations:read, broadcasts:send, webhooks:manage
-- **12 endpoints:** me, messages, contacts, conversations, broadcasts, webhooks
-- **Rate limiting:** 120 req/min por API key
-- **Outbound webhooks:** 3 eventos (message.received, message.status_updated, conversation.created), HMAC-SHA256, SSRF protection, auto-disable
+## 6. Módulos del portal (resumen)
 
-### 12. Webhooks WhatsApp (`/api/whatsapp/webhook`)
-- Verificación HMAC-SHA256 con Meta App Secret
-- Inbound: text, media, reactions, interactive replies
-- Status updates: delivery/read para messages y broadcasts
-- Template status: approved/rejected
-- Find-or-create contact + conversación
-- Dispatch: flows → automations → AI auto-reply
-- Outbound webhook events
+| # | Módulo | Ruta principal | Propósito |
+|---|--------|----------------|-----------|
+| 1 | Auth & RBAC | `src/lib/auth/`, `src/middleware.ts` | Supabase Auth, 4 roles, multi-tenencia x invite |
+| 2 | Dashboard | `(dashboard)/` | Métricas, charts (Recharts), donut pipeline, activity feed |
+| 3 | Inbox | `(dashboard)/inbox` | Bandeja multi-agente, composer, quoting, reactions, status tracking |
+| 4 | Contactos | `(dashboard)/contacts` | CRUD + tags + custom fields + CSV import + dedup |
+| 5 | Pipelines | `(dashboard)/pipelines` | Kanban drag-drop (@dnd-kit), deals vinculados |
+| 6 | Broadcasts | `(dashboard)/broadcasts` | Wizard 4 pasos, tracking webhook, O(1) aggregates |
+| 7 | Automaciones | `(dashboard)/automations` | Triggers + acciones + engine atómico + cron |
+| 8 | Flows | `(dashboard)/flows` | Builder visual (@xyflow/react), 10 nodos, engine invariante |
+| 9 | Asistente IA | `/api/ai/*` | BYOK, drafts, auto-reply, RAG (pgvector + FTS) |
+| 10 | Settings | `(dashboard)/settings` | 11 secciones (WhatsApp, plantillas, AI, API keys, miembros…) |
+| 11 | API pública | `/api/v1/*` | 12 endpoints, Bearer `wacrm_live_*`, rate 120/min |
+| 12 | Webhooks WhatsApp | `/api/whatsapp/webhook` | HMAC-SHA256, inbound + status, dispatch chain |
+| 13 | WhatsApp lib | `src/lib/whatsapp/` | Meta Cloud API v21, encryption, phone utils, templates |
+| 14 | Seguridad | transversal | CSP, HSTS, rate-limit, encryption, HMAC, SSRF |
 
-### 13. Integración WhatsApp (`src/lib/whatsapp/`)
-- Meta Cloud API v21.0 completa: send, media, templates, interactives (buttons/list), reactions
-- Encriptación AES-256-GCM para todos los secrets
-- Utilidades: sanitizePhone, normalizePhone, phoneVariants, phone retry para números sandbox
-- Template system: componentes, validadores, lifecycle, webhook, status normalize
+Detalle completo (tablas SQL, RLS policies, invariantes, contratos de
+API): **`docs/schema.md`** y **`docs/public-api.md`**.
 
-### 14. Seguridad
-- CSP (Report-Only), HSTS 2 años, X-Content-Type-Options, X-Frame-Options: DENY, Referrer-Policy
-- Rate limiting multi-nivel (key/user/account)
-- Encriptación de secrets AES-256-GCM
-- HMAC-SHA256 para webhooks (Meta y outbound)
-- SSRF protection en outbound webhooks
-- Dockerfile con `output: "standalone"`
+## 7. Práctica con IA (agentes sobre el código)
 
-## Reglas de Desarrollo
+- **Explica antes de actuar:** para tareas no triviales, presenta un
+  plan breve y espera confirmación.
+- **Verifica con tests:** tras cambios, ejecuta `pnpm test`. Crea o
+  actualiza tests del código que tocas.
+- **No asumas APIs:** Next.js 16 y Supabase tienen breaking changes.
+  Consulta `node_modules/next/dist/docs/` y el código existente antes
+  de escribir.
+- **Lee el contexto existente:** inspecciona archivos vecinos y los
+  patrones que usan; imita el estilo del código circundante. Busca en
+  `src/lib/` antes de reinventar.
+- **Cambios pequeños y enfocados:** cada cambio resuelve una tarea
+  lógica. Si una tarea puede dividirse, proponlo.
+- **Contratos estables:** no rompas la API pública `/api/v1` ni los
+  contratos del webhook entrante/saliente sin aprobar. Los cambios en
+  tipos compartidos deben ser compatibles hacia atrás o requerir
+  migración coordinada.
+- **Cuando algo no cierra:** pregunta (ver §0 — Decisiones críticas).
 
-1. **Next.js 16:** leer `node_modules/next/dist/docs/` antes de escribir código — hay breaking changes
-2. **TypeScript ~6:** usar tipos estrictos, evitar `any`
-3. **i18n:** usar `next-intl`, mensajes en `messages/es.json` y `messages/en.json` — español es default
-4. **Moneda COP:** en formateo de valores usar `formatCurrency()` con `"COP"`, toda nueva feature financiera debe usar COP por defecto
-5. **Zona horaria:** usar `America/Bogotá` (UTC-5) para fechas, schedules, cron jobs, logs
-6. **Formato fecha/hora:** DD/MM/AAAA, locale `es-CO`
-7. **Supabase:** RLS policies vía `is_account_member()`, todas las tablas con `account_id`
-8. **Tests:** Vitest, correr `pnpm test` antes de commit
-9. **Lint + typecheck:** correr `pnpm lint` y `pnpm typecheck` antes de commit
-<!-- END:nexia-crm-guide -->
+## 8. Límites — qué NO hacer
+
+- **NO** modifiques migraciones ya aplicadas (`supabase/migrations/*`):
+  crea una nueva numerada.
+- **NO** introduzcas dependencias nuevas sin confirmar su necesidad (se
+  auditan periódicamente).
+- **NO** uses `any`. Usa `unknown` y narrowing, o tipos más específicos.
+- **NO** expongas secrets en cliente ni loguees tokens/env vars.
+- **NO** hardcodees URLs de producción ni valores sensibles.
+- **NO** agregues lógica de rol inline: usa los predicados de `roles.ts`.
+- **NO** toques los directorios `public/opus/` (worker minificado) ni
+  `node_modules/`.
+- **NO** uses `require()` — ESM imports siempre.
+- **NO** uses `moment.js` (usa `date-fns`), `lodash` (usa nativas),
+  ni bibliotecas deprecadas en el proyecto.
+
+## 9. Antes de terminar (Definition of Done)
+
+1. `pnpm typecheck` pasa sin errores.
+2. `pnpm lint` pasa sin warnings.
+3. `pnpm test` pasa (incluye tests nuevos del cambio).
+4. Si tocaste esquema: migración nueva creada en `supabase/migrations/`.
+   No modifiques migraciones existentes.
+5. Si tocaste UI: mensajes i18n en `messages/es.json` (y `en.json` si
+   aplica).
+6. Si tocaste feature financiera: usa `formatCurrency()` con la moneda
+   de cuenta. No asumas USD/COP duro.
+7. Sin secrets en el diff: verifica que ningún `.env*` file real, token
+   ni key esté incluido en los cambios.
+8. Un cambio lógico por commit. Commit message: imperativo + conciso.

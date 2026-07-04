@@ -18,6 +18,7 @@ import {
   Radio,
   Settings,
   Shield,
+  TrendingUp,
   User,
   UserCog,
   Users,
@@ -112,7 +113,16 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     { href: "/broadcasts", label: t("broadcasts"), icon: Radio },
     { href: "/automations", label: t("automations"), icon: Zap },
     { href: "/flows", label: t("flows"), icon: Workflow, beta: true },
-  ], [t]);
+    ...(accountRole === "admin" || accountRole === "owner"
+      ? [
+          {
+            href: "/dashboard/agent-performance",
+            label: t("agentPerformance"),
+            icon: TrendingUp,
+          },
+        ]
+      : []),
+  ], [t, accountRole]);
 
   const bottomNavItems = useMemo(() => [
     { href: "/settings", label: t("settings"), icon: Settings },
