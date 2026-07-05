@@ -271,8 +271,6 @@ export function FlowCanvas() {
 }
 
 function FlowCanvasInner() {
-  const t = useTranslations('flowEditor');
-  const tFlows = useTranslations('flows');
   const {
     state,
     setState,

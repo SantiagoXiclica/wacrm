@@ -309,7 +309,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = "/login";
   }, []);
 
-  const refreshProfile = useCallback(async () => {
+  const refreshProfile = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
+    async () => {
     if (!user?.id) return;
     await fetchProfile(user.id);
   }, [user?.id, fetchProfile]);

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { UserPlus, Briefcase, Radio, Zap } from 'lucide-react'
+import { UserPlus, Radio, Zap } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { useTranslations } from 'next-intl'
 

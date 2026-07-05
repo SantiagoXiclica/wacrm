@@ -66,7 +66,7 @@ export function SettingsRail({
           >
             {label ? (
               <div className="hidden px-3 pt-3.5 pb-1.5 text-[11px] font-semibold tracking-[0.09em] text-muted-foreground uppercase lg:block">
-                {t(label as any)}
+                {t(label as string)}
               </div>
             ) : null}
             {items.map((s) => {
@@ -89,7 +89,7 @@ export function SettingsRail({
                   )}
                 >
                   <Icon className="size-4 shrink-0" />
-                  <span className="flex-1">{t(meta.label as any)}</span>
+                  <span className="flex-1">{t(meta.label as string)}</span>
                   {hints?.[s] != null ? (
                     <span
                       className={cn(

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { Message, MessageReaction } from "@/types";
 import {
@@ -109,11 +110,15 @@ function MediaImage({ url, alt }: { url: string; alt: string }) {
   }
 
   return (
-    <img
+    <Image
       src={src ?? ""}
       alt={alt}
+      width={240}
+      height={256}
       className="max-h-64 max-w-60 rounded-lg object-cover"
+      style={{ height: "auto", width: "auto" }}
       onError={() => setError(true)}
+      unoptimized
     />
   );
 }
@@ -251,7 +256,6 @@ export function MessageBubble({
   currentUserId,
   onToggleReaction,
 }: MessageBubbleProps) {
-  const t = useTranslations('messageBubble');
   const isAgent = message.sender_type === "agent" || message.sender_type === "bot";
   const time = format(new Date(message.created_at), "HH:mm");
 

@@ -16,10 +16,8 @@ import {
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+
+
 import { DealCard } from "./deal-card";
 import { formatCurrency } from "@/lib/currency";
 import type { Deal, PipelineStage } from "@/types";

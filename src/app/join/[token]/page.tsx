@@ -32,7 +32,6 @@ import {
   CheckCircle,
   Loader2,
   MailX,
-  ShieldCheck,
   UsersRound,
 } from 'lucide-react';
 
@@ -178,7 +177,7 @@ export default function JoinPage() {
       toast.error(t('couldNotReachServer'));
       setAccepting(false);
     }
-  }, [token]);
+  }, [token, peek, t]);
 
   const handleSignOutAndRetry = useCallback(async () => {
     setSigningOut(true);
@@ -193,7 +192,7 @@ export default function JoinPage() {
       toast.error(t('couldNotSignOut'));
       setSigningOut(false);
     }
-  }, []);
+  }, [t]);
 
   // ----- Loading state (peek pending OR auth not yet resolved) -----
   if (peek === null || authedUserId === undefined) {

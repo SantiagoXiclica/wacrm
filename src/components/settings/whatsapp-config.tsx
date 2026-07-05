@@ -163,7 +163,7 @@ export function WhatsAppConfig() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, t]);
 
   useEffect(() => {
     // Need both the auth session (`!authLoading`) AND the profile
@@ -174,13 +174,14 @@ export function WhatsAppConfig() {
     if (authLoading || profileLoading) return;
     if (!user || !accountId) {
       loadedAccountIdRef.current = null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       return;
     }
     if (loadedAccountIdRef.current === accountId) return;
     loadedAccountIdRef.current = accountId;
     fetchConfig(accountId);
-  }, [authLoading, profileLoading, user?.id, accountId, fetchConfig]);
+  }, [authLoading, profileLoading, user, user?.id, accountId, fetchConfig]);
 
   async function handleSave() {
     if (!phoneNumberId.trim()) {
@@ -633,20 +634,26 @@ export function WhatsAppConfig() {
                 className="bg-muted border-border text-foreground placeholder:text-muted-foreground tracking-widest"
               />
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Needed only to wire <strong className="text-muted-foreground">inbound</strong> messages
-                for a <strong className="text-muted-foreground">production</strong> number. Set it in{' '}
+                Necesario solo para conectar mensajes{' '}
+                <strong className="text-muted-foreground">entrantes</strong>{' '}
+                de un número de{' '}
+                <strong className="text-muted-foreground">producción</strong>.
+                Configúralo en{' '}
                 <strong className="text-muted-foreground">
                   Meta Business Manager → WhatsApp Accounts → Phone
                   Numbers → Two-step verification
                 </strong>
-                , then paste it here so wacrm can subscribe the number —
-                otherwise Meta routes inbound events to whichever app
-                last claimed it (the symptom that hits second numbers
-                under a shared WABA).{' '}
-                <strong className="text-muted-foreground">Meta test numbers</strong> have no
-                PIN and are pre-registered — leave this blank for them.
-                Leaving it blank also keeps an existing registration
-                untouched.
+                , luego pégalo aquí para que NEXIA CRM pueda suscribir el
+                número — de lo contrario, Meta enruta los eventos
+                entrantes a la última app que lo reclamó (el síntoma
+                que afecta a los segundos números bajo una WABA
+                compartida).{' '}
+                <strong className="text-muted-foreground">
+                  Números de prueba de Meta
+                </strong>{' '}
+                no tienen PIN y están pre-registrados — déjalo en
+                blanco para ellos. Dejarlo en blanco también mantiene
+                intacto un registro existente.
               </p>
             </div>
           </CardContent>

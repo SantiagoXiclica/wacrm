@@ -138,7 +138,7 @@ export function SettingsOverview({
     return () => {
       cancelled = true;
     };
-  }, [user?.id, accountId, canManageMembers]);
+  }, [user, user?.id, accountId, canManageMembers]);
 
   const displayName = profile?.full_name || profile?.email || 'Your account';
   const initial = (profile?.full_name || profile?.email || 'U').charAt(0).toUpperCase();
@@ -241,7 +241,7 @@ export function SettingsOverview({
         {roleMeta && RoleIcon ? (
           <SettingsChip variant={roleMeta.variant}>
             <RoleIcon />
-            {tr(roleMeta.label as any)}
+            {tr(roleMeta.label as string)}
           </SettingsChip>
         ) : null}
       </Card>
@@ -266,7 +266,7 @@ export function SettingsOverview({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-foreground">
-                  {t(meta.label as any)}
+                  {t(meta.label as string)}
                 </span>
                 <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                   {loading ? (

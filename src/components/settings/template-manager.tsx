@@ -169,6 +169,7 @@ export function TemplateManager() {
   // Resize body_samples so it always has exactly bodyVarCount entries.
   // (We mutate via setForm in an effect so React owns the state.)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm((prev) => {
       if (prev.body_samples.length === bodyVarCount) return prev;
       const next = prev.body_samples.slice(0, bodyVarCount);
@@ -180,6 +181,7 @@ export function TemplateManager() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       return;
     }
@@ -316,8 +318,6 @@ export function TemplateManager() {
           (e: { name: string; language: string; message: string }) =>
             `${e.name} (${e.language})`,
         );
-        const suffix =
-          data.errors.length > 3 ? `, +${data.errors.length - 3} more` : '';
         toast.error(t('syncFailed', { preview: preview.join(', '), n: data.errors.length - 3 }));
       }
       if (data.truncated) {

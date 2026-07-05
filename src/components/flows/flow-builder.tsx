@@ -73,7 +73,6 @@ import { useFlowEditor, type BuilderState } from './flow-editor-state';
 // ============================================================
 
 export function FlowBuilder() {
-  const t = useTranslations('flows');
   const {
     state,
     setState,

@@ -176,6 +176,7 @@ export function MembersTab() {
   }, [canManageMembers, t]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadEverything();
   }, [loadEverything]);
 
@@ -442,7 +443,7 @@ export function MembersTab() {
                         className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium ${roleMeta.className}`}
                       >
                         <RoleIcon className="size-3.5" />
-                        {tr(roleMeta.label as any)}
+                        {tr(roleMeta.label as string)}
                       </span>
                     )}
 
@@ -528,7 +529,7 @@ export function MembersTab() {
                             className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${inviteRoleMeta.className}`}
                           >
                             <InviteRoleIcon className="size-3" />
-                            {tr(inviteRoleMeta.label as any)}
+                            {tr(inviteRoleMeta.label as string)}
                           </span>
                         </div>
                         <p className="mt-0.5 text-xs text-muted-foreground">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import type { Pipeline, PipelineStage, Deal } from "@/types";
@@ -44,13 +44,13 @@ export default function PipelinesPage() {
   const { accountId } = useAuth();
 
   // Spec-defined seed — name and color per the product spec.
-  const SPEC_DEFAULT_STAGES = [
+  const SPEC_DEFAULT_STAGES = useMemo(() => [
     { name: t('newLead'), color: "#3b82f6", position: 0 },
     { name: t('qualified'), color: "#eab308", position: 1 },
     { name: t('proposalSent'), color: "#f97316", position: 2 },
     { name: t('negotiation'), color: "#8b5cf6", position: 3 },
     { name: t('won'), color: "#22c55e", position: 4 },
-  ];
+  ], [t]);
 
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [selectedPipelineId, setSelectedPipelineId] = useState<string>("");
@@ -138,7 +138,7 @@ export default function PipelinesPage() {
     await supabase.from("pipeline_stages").insert(stagesPayload);
 
     return pipeline as Pipeline;
-  }, [supabase, accountId]);
+  }, [supabase, accountId, t, SPEC_DEFAULT_STAGES]);
 
   // Initial load + seed-if-empty
   useEffect(() => {
@@ -177,7 +177,6 @@ export default function PipelinesPage() {
     if (!selectedPipelineId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setStages([]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDeals([]);
       return;
     }
@@ -229,7 +228,7 @@ export default function PipelinesPage() {
         refreshDeals();
       }
     },
-    [supabase, refreshDeals],
+    [supabase, refreshDeals, t],
   );
 
   const handleAddDeal = useCallback(

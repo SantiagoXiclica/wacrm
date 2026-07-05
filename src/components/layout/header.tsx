@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/layout/mode-toggle";
-import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 
 interface HeaderProps {
   /** Wired to the shell's drawer state. Used only on mobile — the

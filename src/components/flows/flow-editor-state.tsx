@@ -51,7 +51,7 @@ import {
 } from "@/lib/flows/validate";
 import { unlinkNodeReferences } from "@/lib/flows/edges";
 import type { FlowNodeRow, FlowRow } from "@/lib/flows/types";
-import { NODE_META, slugify, type BuilderNode, type NodeType } from "./shared";
+import { slugify, type BuilderNode, type NodeType } from "./shared";
 
 // ============================================================
 // State shape
@@ -472,7 +472,6 @@ export function FlowEditorProvider({
 
   const addNode = useCallback(
     (type: NodeType): string => {
-      const meta = NODE_META[type];
       const base = slugify(type, type);
       let createdKey = base;
       setState((s) => {

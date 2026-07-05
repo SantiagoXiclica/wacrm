@@ -63,8 +63,8 @@ export function AppearancePanel() {
             <ThemeCard
               key={themeItem.id}
               id={themeItem.id}
-              name={t(`theme${themeItem.id.charAt(0).toUpperCase() + themeItem.id.slice(1)}` as any)}
-              tagline={t(`theme${themeItem.id.charAt(0).toUpperCase() + themeItem.id.slice(1)}Tagline` as any)}
+              name={t(`theme${themeItem.id.charAt(0).toUpperCase() + themeItem.id.slice(1)}` as string)}
+              tagline={t(`theme${themeItem.id.charAt(0).toUpperCase() + themeItem.id.slice(1)}Tagline` as string)}
               swatch={themeItem.swatch}
               isActive={themeItem.id === theme}
               onPick={() => setTheme(themeItem.id)}
@@ -94,7 +94,7 @@ function ModeCard({
       role="radio"
       onClick={onPick}
       aria-checked={isActive}
-      aria-label={t(mode as any)}
+      aria-label={t(mode as string)}
       className={cn(
         "flex items-center gap-3 rounded-lg border bg-card p-4 text-left transition-colors",
         isActive
@@ -109,7 +109,7 @@ function ModeCard({
         <Icon className="h-4 w-4" />
       </span>
       <span className="flex-1 text-sm font-semibold capitalize text-foreground">
-        {t(mode as any)}
+        {t(mode as string)}
       </span>
       {isActive && (
         <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
