@@ -46,8 +46,8 @@ export default function NewAutomationPage() {
         })),
       )
       return {
-        name: nameKey ? t(nameKey as any) : tmpl.name,
-        description: descKey ? t(descKey as any) : tmpl.description,
+        name: nameKey ? t(nameKey) : tmpl.name,
+        description: descKey ? t(descKey) : tmpl.description,
         trigger_type: tmpl.trigger_type,
         trigger_config: tmpl.trigger_config as Record<string, unknown>,
         is_active: false,

@@ -280,10 +280,10 @@ export default function FlowsPage() {
                     >
                       <Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm font-semibold text-popover-foreground">
-                        {nameKey ? t(nameKey as any) : tmpl.name}
+                        {nameKey ? t(nameKey) : tmpl.name}
                       </span>
                       <span className="text-xs leading-relaxed text-muted-foreground">
-                        {descKey ? t(descKey as any) : tmpl.description}
+                        {descKey ? t(descKey) : tmpl.description}
                       </span>
                       <span className="mt-auto border-t border-border pt-2 text-[11px] text-muted-foreground">
                         {t("nodes", { n: tmpl.node_count })}

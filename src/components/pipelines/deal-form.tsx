@@ -69,7 +69,7 @@ export function DealForm({
 
   const translateStageName = (name: string) => {
     const key = STAGE_NAME_MAP[name];
-    return key ? tPipelines(key as any) : name;
+    return key ? tPipelines(key) : name;
   };
 
   const [title, setTitle] = useState("");

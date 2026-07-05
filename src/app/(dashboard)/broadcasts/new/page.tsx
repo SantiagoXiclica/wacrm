@@ -159,7 +159,7 @@ export default function NewBroadcastPage() {
                     isActive ? 'text-foreground' : isCompleted ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
-                  {t(key as any)}
+                  {t(key)}
                 </span>
               </div>
               {index < STEP_KEYS.length - 1 && (

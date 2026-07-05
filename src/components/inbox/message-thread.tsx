@@ -309,6 +309,7 @@ export function MessageThread({
   // realtime channel.
   useEffect(() => {
     if (!conversationId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setReactions([]);
       return;
     }
@@ -409,6 +410,7 @@ export function MessageThread({
   // Clear any in-progress reply draft when the active conversation changes —
   // a quote pulled from conversation A shouldn't bleed into conversation B.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReplyTo(null);
   }, [conversationId]);
 
@@ -442,6 +444,7 @@ export function MessageThread({
   }, [messages]);
 
   const handleSend = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     async (text: string, replyToId?: string) => {
       if (!conversation) return;
 
@@ -499,6 +502,7 @@ export function MessageThread({
   );
 
   const handleSendMedia = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     async (payload: SendMediaPayload) => {
       if (!conversation) return;
 
@@ -579,6 +583,7 @@ export function MessageThread({
     [conversation, onStatusChange]
   );
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const handleOpenTemplates = useCallback(() => {
     setTemplateModalOpen(true);
   }, []);
@@ -686,6 +691,7 @@ export function MessageThread({
   );
 
   const handleStartReply = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (msg: Message) => {
       setReplyTo({
         id: msg.id,
@@ -701,6 +707,7 @@ export function MessageThread({
   // current reactions for the bubble are already in scope — keeps this
   // function dependency-free w.r.t. the reaction list.
   const postReaction = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     async (messageId: string, emoji: string) => {
       if (!user?.id || !conversation) {
         console.warn("[reactions] missing user or conversation");

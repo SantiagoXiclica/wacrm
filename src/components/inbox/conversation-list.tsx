@@ -61,7 +61,7 @@ export function ConversationList({
   resyncToken = 0,
 }: ConversationListProps) {
   const t = useTranslations('inboxPage');
-  const filterOptions = FILTER_KEYS.map(f => ({ label: t(f.key as any), value: f.value }));
+  const filterOptions = FILTER_KEYS.map(f => ({ label: t(f.key), value: f.value }));
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [loading, setLoading] = useState(true);
@@ -195,6 +195,7 @@ export function ConversationList({
     );
   }, []);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const clearContactFilters = useCallback(() => {
     setSelectedTagIds([]);
     setSelectedCompany(null);

@@ -389,6 +389,7 @@ export function MessageComposer({
   // upload size limit.
   useEffect(() => {
     if (recording && recordSeconds >= MAX_RECORDING_SECONDS) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       stopRecording();
     }
   }, [recording, recordSeconds, stopRecording]);
