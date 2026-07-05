@@ -69,6 +69,16 @@ export function ContactForm({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
 
+  async function fetchTags() {
+    setLoadingTags(true);
+    const { data } = await supabase
+      .from('tags')
+      .select('*')
+      .order('name');
+    if (data) setTags(data);
+    setLoadingTags(false);
+  }
+
   useEffect(() => {
     if (open) {
       setName(contact?.name ?? '');
@@ -81,8 +91,6 @@ export function ContactForm({
     }
   }, [open, contact]);
 
-  // Look up an existing contact with this number (new contacts only).
-  // Runs on blur so we don't query on every keystroke.
   async function checkDuplicate() {
     if (isEdit || !accountId) return;
     const value = phone.trim();
@@ -101,16 +109,6 @@ export function ContactForm({
     } finally {
       setCheckingDup(false);
     }
-  }
-
-  async function fetchTags() {
-    setLoadingTags(true);
-    const { data } = await supabase
-      .from('tags')
-      .select('*')
-      .order('name');
-    if (data) setTags(data);
-    setLoadingTags(false);
   }
 
   function toggleTag(tagId: string) {

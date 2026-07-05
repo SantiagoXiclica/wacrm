@@ -132,7 +132,7 @@ export function FlowEditorShell({ initialFlow, initialNodes }: Props) {
                     className="h-2.5 w-2.5 rounded-full"
                     style={{ background: nodeColors(nodeType).solid }}
                   />
-                  {tFlows(NODE_META[nodeType].labelKey as any)}
+                  {tFlows(NODE_META[nodeType].labelKey)}
                 </span>
               ))}
             </div>

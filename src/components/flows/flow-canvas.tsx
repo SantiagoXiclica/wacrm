@@ -192,7 +192,7 @@ function FlowNodeCard({ data, selected }: NodeProps) {
           className="truncate text-[10.5px] font-semibold tracking-wider uppercase"
           style={{ color: c.text }}
         >
-          {meta.labelKey ? tFlows(meta.labelKey as any) : ''}
+          {meta.labelKey ? tFlows(meta.labelKey) : ''}
         </span>
         {isEntry && (
           <span className="border-border text-muted-foreground ml-auto rounded border px-1.5 py-0.5 text-[8.5px] font-bold tracking-[0.1em] uppercase">
@@ -353,6 +353,7 @@ function FlowCanvasInner() {
   const [rfNodes, setRfNodes] = useState<RfNode<NodeData>[]>(derivedRfNodes);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRfNodes(derivedRfNodes);
   }, [derivedRfNodes]);
 
@@ -632,7 +633,7 @@ function NodeEditSheet({
           <NodeIconChip type={node.node_type} size={36} iconSize={18} />
           <div className="min-w-0 flex-1">
             <SheetTitle className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase">
-              <span style={{ color: c.text }}>{tFlows(meta.labelKey as any)}</span>
+              <span style={{ color: c.text }}>{tFlows(meta.labelKey)}</span>
               {isEntry && (
                 <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-semibold tracking-wider text-emerald-300 uppercase">
                   Entry
@@ -640,7 +641,7 @@ function NodeEditSheet({
               )}
             </SheetTitle>
             <SheetDescription className="text-muted-foreground mt-0.5 text-xs">
-              {tFlows(meta.blurbKey as any)}
+              {tFlows(meta.blurbKey)}
             </SheetDescription>
           </div>
           <code className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px]">
@@ -765,10 +766,10 @@ function CanvasAddNodeButton() {
                   />
                   <span className="flex flex-col">
                     <span className="text-popover-foreground text-[13px] font-semibold">
-          {meta.labelKey ? tFlows(meta.labelKey as any) : ''}
+          {meta.labelKey ? tFlows(meta.labelKey) : ''}
                     </span>
                     <span className="text-muted-foreground text-[11.5px]">
-                      {tFlows(meta.blurbKey as any)}
+                      {tFlows(meta.blurbKey)}
                     </span>
                   </span>
                 </DropdownMenuItem>

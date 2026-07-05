@@ -427,7 +427,7 @@ function NodeCard({
               className="truncate text-[11px] font-semibold tracking-wider uppercase"
               style={{ color: c.text }}
             >
-              {t(meta.labelKey as any)}
+              {t(meta.labelKey)}
             </span>
             <code className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">
               {node.node_key}
@@ -603,7 +603,7 @@ function AddNodeButton({ onAdd }: { onAdd: (type: NodeType) => void }) {
               return (
                 <DropdownMenuItem key={nodeType} onClick={() => onAdd(nodeType)}>
                   <meta.icon className={cn('h-3.5 w-3.5', meta.color)} />
-              {t(meta.labelKey as any)}
+              {t(meta.labelKey)}
                 </DropdownMenuItem>
               );
             })}

@@ -89,10 +89,10 @@ export const NODE_CATEGORIES: { id: NodeCategory; label: string }[] = [
 export const NODE_META: Record<
   NodeType,
   {
-    labelKey: string;
+    labelKey: 'flowNodeStart' | 'flowNodeSendMessage' | 'flowNodeSendButtons' | 'flowNodeSendList' | 'flowNodeSendMedia' | 'flowNodeCollectInput' | 'flowNodeCondition' | 'flowNodeSetTag' | 'flowNodeHandoff' | 'flowNodeEnd';
     icon: typeof Workflow;
     color: string;
-    blurbKey: string;
+    blurbKey: 'flowDescStart' | 'flowDescSendMessage' | 'flowDescSendButtons' | 'flowDescSendList' | 'flowDescSendMedia' | 'flowDescCollectInput' | 'flowDescCondition' | 'flowDescSetTag' | 'flowDescHandoff' | 'flowDescEnd';
     category: NodeCategory;
   }
 > = {
