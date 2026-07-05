@@ -35,11 +35,13 @@ const MASKED_KEY = '••••••••••••••••';
 const PROVIDER_LABEL: Record<AiProvider, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic (Claude)',
+  'xiclica-ia-plan': 'Xiclica Plan IA',
 };
 
 const KEY_PLACEHOLDER: Record<AiProvider, string> = {
   openai: 'sk-...',
   anthropic: 'sk-ant-...',
+  'xiclica-ia-plan': 'xclk-...',
 };
 
 export function AiConfig() {
@@ -110,15 +112,18 @@ export function AiConfig() {
     void fetchConfig();
   }, [accountId, fetchConfig]);
 
-  // Swap the model default when the provider changes, unless the user
-  // typed a custom model.
   const handleProviderChange = (next: AiProvider) => {
     setProvider(next);
-    const isDefaultModel =
-      model === AI_PROVIDER_DEFAULT_MODEL.openai ||
-      model === AI_PROVIDER_DEFAULT_MODEL.anthropic ||
-      model.trim() === '';
-    if (isDefaultModel) setModel(AI_PROVIDER_DEFAULT_MODEL[next]);
+    if (next === 'xiclica-ia-plan') {
+      setModel('deepseek-v4-flash');
+    } else {
+      const isDefaultModel =
+        model === AI_PROVIDER_DEFAULT_MODEL.openai ||
+        model === AI_PROVIDER_DEFAULT_MODEL.anthropic ||
+        model === AI_PROVIDER_DEFAULT_MODEL['xiclica-ia-plan'] ||
+        model.trim() === '';
+      if (isDefaultModel) setModel(AI_PROVIDER_DEFAULT_MODEL[next]);
+    }
   };
 
   const keyPayload = () => (keyEdited ? apiKey.trim() : undefined);
@@ -264,20 +269,35 @@ export function AiConfig() {
                     <SelectItem value="anthropic">
                       {PROVIDER_LABEL.anthropic}
                     </SelectItem>
+                    <SelectItem value="xiclica-ia-plan">
+                      {PROVIDER_LABEL['xiclica-ia-plan']}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="ai-model">{t('model')}</Label>
-                <Input
-                  id="ai-model"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  placeholder={AI_PROVIDER_DEFAULT_MODEL[provider]}
-                  disabled={disabled}
-                />
-              </div>
+              {provider === 'xiclica-ia-plan' ? (
+                <div className="space-y-2">
+                  <Label>{t('model')}</Label>
+                  <div className="flex h-10 w-full items-center rounded-md border border-border bg-muted/40 px-3 text-sm text-muted-foreground">
+                    deepseek-v4-flash
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Modelo fijo del plan Xiclica IA
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="ai-model">{t('model')}</Label>
+                  <Input
+                    id="ai-model"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    placeholder={AI_PROVIDER_DEFAULT_MODEL[provider]}
+                    disabled={disabled}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

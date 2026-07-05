@@ -54,6 +54,47 @@ describe('parseGeneration', () => {
   })
 })
 
+describe('generateReply — Xiclica', () => {
+  it('calls the OpenCode Go endpoint with fixed model and returns the reply', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        okResponse({ choices: [{ message: { content: 'Sure — happy to help!' } }] }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await generateReply({
+      config: config({ provider: 'xiclica-ia-plan', apiKey: 'xclk-test' }),
+      systemPrompt: 'sys',
+      messages: [{ role: 'user', content: 'Hi' }],
+    })
+
+    expect(res).toEqual({ text: 'Sure — happy to help!', handoff: false })
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(url).toContain('opencode.ai/zen/go/v1')
+    const body = JSON.parse(opts.body)
+    expect(body.model).toBe('deepseek-v4-flash')
+    expect(opts.headers.Authorization).toBe('Bearer xclk-test')
+  })
+
+  it('maps a 401 to an invalid_key AiError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        errResponse(401, { error: { message: 'Incorrect API key' } }),
+      ),
+    )
+
+    await expect(
+      generateReply({
+        config: config({ provider: 'xiclica-ia-plan' }),
+        systemPrompt: 'sys',
+        messages: [{ role: 'user', content: 'Hi' }],
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_key', status: 401 })
+  })
+})
+
 describe('generateReply — OpenAI', () => {
   it('calls the chat completions endpoint and returns the reply', async () => {
     const fetchMock = vi
