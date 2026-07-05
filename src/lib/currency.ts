@@ -11,7 +11,7 @@
  */
 
 /** App-wide fallback when no account/deal currency is available. */
-export const DEFAULT_CURRENCY = "USD";
+export const DEFAULT_CURRENCY = "COP";
 
 export interface CurrencyOption {
   /** ISO-4217 code, e.g. "USD". Stored verbatim in the DB. */
@@ -35,6 +35,7 @@ export const CURRENCIES: CurrencyOption[] = [
   { code: "AUD", label: "Australian Dollar", symbol: "A$" },
   { code: "CAD", label: "Canadian Dollar", symbol: "C$" },
   { code: "BRL", label: "Brazilian Real", symbol: "R$" },
+  { code: "COP", label: "Colombian Peso", symbol: "$" },
   { code: "JPY", label: "Japanese Yen", symbol: "¥" },
   { code: "CNY", label: "Chinese Yuan", symbol: "¥" },
   { code: "AED", label: "UAE Dirham", symbol: "د.إ" },

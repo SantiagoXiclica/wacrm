@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useTranslations } from 'next-intl';
 import { formatCurrency } from '@/lib/currency';
@@ -17,7 +16,6 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 
-import { loadAgentPerformance } from '@/lib/agent-analytics/queries';
 import type {
   AgentPerformanceData,
   AgentPerformanceRow,
@@ -68,9 +66,13 @@ export default function AgentPerformancePage() {
     const loadAll = async () => {
       setLoading(true);
       setError(false);
-      const db = createClient();
       try {
-        const result = await loadAgentPerformance(db, range);
+        const res = await fetch(`/api/agent-performance?range=${range}`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.error ?? `HTTP ${res.status}`);
+        }
+        const result = await res.json();
         if (cancelled) return;
         setData(result.data);
         setFlowStats(result.flowStats);

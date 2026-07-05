@@ -16,6 +16,7 @@ import type {
 } from '@/types'
 import { supabaseAdmin } from './admin-client'
 import { engineSendText, engineSendTemplate } from './meta-send'
+import { DEFAULT_CURRENCY } from '@/lib/currency'
 
 // ------------------------------------------------------------
 // Public API
@@ -518,7 +519,7 @@ async function runStep(step: AutomationStep, args: ExecuteArgs): Promise<string>
         contact_id: args.contactId,
         title: interpolate(cfg.title, args),
         value: cfg.value ?? 0,
-        currency: acct?.default_currency ?? 'USD',
+        currency: acct?.default_currency ?? DEFAULT_CURRENCY,
         status: 'open',
       })
       return 'deal created'
