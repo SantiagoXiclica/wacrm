@@ -797,9 +797,120 @@ Path conventions:
 
 ---
 
-## 8. Patrones Arquitectónicos Clave
+## 8. Portal Screens — Datos, Representación y Acciones
 
-### 8.1 Multi-tenencia con `accounts`
+> Mapa declarativo de cada pantalla: qué datos muestra, cómo se
+  representan y qué puede hacer el usuario. Single-tenant: todos los
+  perfiles `owner`/`admin`/`agent` son miembros del equipo y aparecen
+  en todas las secciones sin filtrar por `account_id`.
+
+### 8.1 Dashboard (`/dashboard`)
+
+| Elemento | Representación | Datos |
+|----------|---------------|-------|
+| KPI Cards (4) | Cards numéricos con icono | Oportunidades, matriculados, perdidos, comisiones del período |
+| Pipeline Donut | Gráfico donut con leyenda | Total pipeline value por stage (stage.name + sum(deals.value)) |
+| Agent Ranking | Card con top 3 agentes + avatar + valor comisionado | agents con más `totalValueWon` en el período |
+| Actividad Reciente | Feed vertical con avatar + texto + timestamp | Últimos 20 eventos (deals ganados/perdidos, conversaciones asignadas, broadcasts enviados) |
+| Timeline (trend) | Área chart suave | Deals creados vs ganados por semana (últimos 30 días) |
+| **Acciones:** navegar a deals, contacts, inbox desde los cards clickeables |
+
+### 8.2 Agent Performance (`/dashboard/agent-performance`)
+
+| Elemento | Representación | Datos |
+|----------|---------------|-------|
+| KPI Cards (4) | Cards con icono + valor + win-rate | Matriculados, comisiones, pipeline value, win rate del período |
+| Ranking Table | Tabla sorteable (comisiones default ↓) con avatar + nombre + métricas | Por agente: solicitudes, matriculados, perdidos, win rate, comisiones, comisión promedio + trend ▲/▼/— |
+| Deal Trend Chart | Área chart con 2 series | Oportunidades creadas vs matriculados por semana/querys |
+| Agent Quadrant | Scatter chart (burbujas con nombre) | Eje X: avg deal value, Eje Y: win rate, tamaño: total deals |
+| Deal Distribution | Donut chart con colores por agente + slice "Otros" | Total value won por agente (top N + resto agregado) |
+| **Acciones:** cambiar rango 7/30/90 días, ordenar columnas, ver agente virtual "Sin asignar" para deals huérfanos |
+| **Nota:** deals sin `assigned_to` o con assignee fuera del roster se agrupan en un agente virtual "Sin asignar" para que aparezcan en ranking y charts |
+
+### 8.3 Inbox (`/inbox`)
+
+| Elemento | Representación | Datos |
+|----------|---------------|-------|
+| Conversation List | Lista vertical con avatar + nombre + último mensaje + badge unread | Conversaciones del equipo, ordenadas por `last_message_at` DESC |
+| Message Thread | Burbujas de chat (customer left, agent right) con timestamp + status badges | Mensajes de la conversación seleccionada, en tiempo real |
+| Composer | Input + botón enviar + attach media + template picker | Envío de mensajes outbound vía Meta Cloud API |
+| Info Panel (sidebar) | Ficha del contacto + tags + deal vinculado + flow activo | Contact info, notas, deals asociados, estado del flow run |
+| **Acciones:** asignar/desasignar conversación a agente, marcar como leído, enviar mensaje, reaccionar (emoji), responder citando, adjuntar media, enviar template, ver/editar contacto, iniciar flow manual |
+
+### 8.4 Contacts (`/contacts`)
+
+| Elemento | Representación | Datos |
+|----------|---------------|-------|
+| Contact Table | Tabla paginada con avatar + nombre + teléfono + email + tags | Todos los contactos del equipo |
+| Search Bar | Input con debounce | Búsqueda por nombre/teléfono/email |
+| Tag Filter | Chips seleccionables | Filtrar por tags |
+| Contact Detail Modal | Modal con pestañas: info, notas, deals, conversaciones | Datos completos del contacto |
+| **Acciones:** crear, editar, eliminar contacto; asignar tags; agregar custom fields; agregar notas; importar CSV; deduplicar automático por teléfono normalizado |
+
+### 8.5 Pipelines (`/pipelines`)
+
+| Elemento | Representación | Datos |
+|----------|---------------|-------|
+| Pipeline Selector | Tabs/select de pipelines disponibles | Pipelines del equipo con sus stages |
+| Kanban Board | Columnas drag-and-drop (@dnd-kit) con cards de deal | Deals por stage, cada card muestra: title, value, contact name, assigned_to |
+| Deal Detail Modal | Modal con formulario de deal | Todos los campos del deal (title, value, stage, assigned_to, contact, expected_close_date, notes) |
+| **Acciones:** crear deal, editar deal, mover deal entre stages (drag), cambiar status (open/won/lost), asignar a agente, vincular a contacto/conversación |
+
+### 8.6 Broadcasts (`/broadcasts`)
+
+| Elemento | Representación | Datos |
+|----------|---------------|-------|
+| Campaign List | Tabla con nombre + status + fechas + contadores | Campañas de difusión del equipo |
+| Wizard (4 pasos) | Formulario multi-paso: ① template + vars → ② audience → ③ schedule → ④ review | Creación progresiva de campaña |
+| Campaign Detail | Cards de contadores (sent/delivered/read/replied/failed) + tabla recipients | Tracking en vivo de la campaña |
+| **Acciones:** crear campaña (wizard 4 pasos), pausar/reanudar, ver detalle con tracking por contacto |
+
+### 8.7 Automations (`/automations`)
+
+| Elemento | Representación | Datos |
+|----------|---------------|-------|
+| Automation List | Tabla con nombre + trigger + is_active + execution_count | Reglas de automatización del equipo |
+| Automation Editor | Árbol de pasos con configuración por step_type | Steps secuenciales con branches yes/no |
+| Execution Logs | Tabla con timestamp + trigger_event + steps + status | Historial de ejecuciones por automatización |
+| **Acciones:** crear/editar/eliminar automatización, activar/desactivar, ver logs, ejecutar manualmente |
+
+### 8.8 Flows (`/flows`)
+
+| Elemento | Representación | Datos |
+|----------|---------------|-------|
+| Flow List | Tabla con nombre + status + trigger + execution_count | Flujos conversacionales del equipo |
+| Flow Builder | Canvas visual (@xyflow/react) con nodos conectables | 10 tipos de nodo: start, send_buttons, send_list, send_message, send_media, collect_input, condition, set_tag, handoff, http_fetch, end |
+| Flow Runs History | Tabla con contacto + status + current_node + timestamps | Ejecuciones del flow (active/completed/handed_off/etc.) |
+| **Acciones:** crear/editar/eliminar flow, activar con trigger (keyword/inbound/manual), arrastrar nodos, conectar edges, ver runs en vivo (realtime) |
+
+### 8.9 Settings (`/settings`) — 11 Secciones
+
+| Sección | Representación | Acciones |
+|---------|---------------|----------|
+| General | Formulario: nombre de cuenta, moneda default | Editar perfil de cuenta |
+| WhatsApp | Form + status badge + botón registrar | Configurar número WhatsApp (conectar/desconectar) |
+| Plantillas | Tabla de message_templates + botón sync | Sincronizar plantillas desde Meta, enviar a aprobación |
+| Miembros | Tabla de miembros + rol + presencia + botón invitar | Invitar miembros, cambiar rol, remover miembro |
+| AI Config | Formulario: provider, model, API key, system prompt, auto-reply toggle | Configurar asistente IA BYOK |
+| AI Knowledge | Tabla de documentos + botón upload + reindex | Gestionar base de conocimiento para RAG |
+| API Keys | Tabla de API keys + botón crear | Crear/revocar API keys públicas |
+| Webhooks | Tabla de webhook endpoints | Configurar outbound webhooks con eventos |
+| Notificaciones | Toggles por tipo de notificación (futuro) | Preferencias de notificación |
+| Apariencia | Theme toggle + acentos (futuro) | Personalización visual |
+| Facturación | Plan actual + límites (futuro) | Suscripción y pagos |
+
+### 8.10 Notificaciones (`/notifications`)
+
+| Elemento | Representación | Datos |
+|----------|---------------|-------|
+| Notification Feed | Lista vertical con icono + título + cuerpo + timestamp + badge read/unread | Notificaciones: asignación de conversación, mención, etc. |
+| **Acciones:** marcar como leído, click para navegar a la conversación/entidad relacionada |
+
+---
+
+## 9. Patrones Arquitectónicos Clave
+
+### 9.1 Multi-tenencia con `accounts`
 
 Cada usuario pertenece a exactamente **una** cuenta. La tenencia se implementa mediante:
 - **Columna `account_id`** en toda tabla operacional (añadida en migración 017)
@@ -808,13 +919,13 @@ Cada usuario pertenece a exactamente **una** cuenta. La tenencia se implementa m
 - **Invitations:** tokens SHA-256 con expiración, canjeables via RPC `redeem_invitation()`
 - **Signup trigger:** crea automáticamente profile + account al registrarse
 
-### 8.2 RBAC 3 Capas
+### 9.2 RBAC 3 Capas
 
 1. **DB RLS:** `is_account_member()` en cada policy
 2. **Server:** `requireRole()` en API routes + `lib/auth/roles.ts`
 3. **Client:** `<RequireRole>` componente + `gated-button` + `use-can.ts`
 
-### 8.3 Contadores Atómicos
+### 9.3 Contadores Atómicos
 
 Para evitar race conditions en operaciones concurrentes:
 - **Broadcasts:** trigger incremental `broadcast_recipients_aggregate` (bumps O(1) por status change)
@@ -822,17 +933,17 @@ Para evitar race conditions en operaciones concurrentes:
 - **Flows:** RPC `increment_flow_execution_count` (CTE update atómico)
 - **AI Replies:** RPC `claim_ai_reply_slot` (slot atómico con cap check en un UPDATE)
 
-### 8.4 RAG Híbrido (FTS + pgvector)
+### 9.4 RAG Híbrido (FTS + pgvector)
 
 - **Léxico (FTS):** `tsvector` generado + GIN index + `ts_rank` + `plainto_tsquery` (language-neutral 'simple' config)
 - **Semántico (pgvector):** `vector(1536)` para embeddings OpenAI + índice HNSW (no IVFFlat, porque tablas empiezan vacías)
 - Dos RPCs: `match_ai_knowledge_fts()` y `match_ai_knowledge_semantic()`, ambas SECURITY DEFINER
 
-### 8.5 Flows: Invariante Active-Run
+### 9.5 Flows: Invariante Active-Run
 
 El índice `idx_one_active_run_per_contact` (UNIQUE parcial WHERE status = 'active') garantiza que un contacto tenga **como máximo un flow activo** a la vez. Dos webhooks concurrentes colisionan con SQLSTATE 23505 — el runner atrapa el error y retorna consumed:true.
 
-### 8.6 Encriptación AES-256-GCM de Secrets
+### 9.6 Encriptación AES-256-GCM de Secrets
 
 Todos los secrets se almacenan encriptados:
 - `whatsapp_config.access_token`
@@ -840,7 +951,7 @@ Todos los secrets se almacenan encriptados:
 - `ai_configs.api_key` y `embeddings_api_key`
 - `ENCRYPTION_KEY` en `.env` (64 hex chars = 32 bytes)
 
-### 8.7 Idempotencia en Migraciones
+### 9.7 Idempotencia en Migraciones
 
 Toda migración es idempotente y re-ejecutable usando:
 - `IF NOT EXISTS` en tablas e índices
@@ -851,6 +962,8 @@ Toda migración es idempotente y re-ejecutable usando:
 ---
 
 ## 9. Convenciones de Código para Agentes de IA
+
+> **Arquitectura:** Single-tenant empresarial. Todos los perfiles `owner`/`admin`/`agent` son miembros del mismo equipo. NO filtrar por `account_id` en loaders de agentes (ver §8).
 
 1. **TypeScript ~6 estricto** — evitar `any`, usar tipos explícitos
 2. **next-intl** — usar `useTranslations()` con `messages/es.json` (default) y `messages/en.json`

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { daysAgoStart } from '@/lib/dashboard/date-utils';
 import { isAccountRole } from '@/lib/auth/roles';
@@ -8,19 +9,42 @@ import type {
   AgentMessageStats,
   AgentPerformanceData,
   AgentPerformanceRow,
+  AgentQuadrantPoint,
   AgentResponseTime,
-  FlowHandoffStat,
+  DealDistributionSlice,
+  DealTrendPoint,
 } from './types';
+import {
+  aggregateAccountDeals,
+  aggregateDealsByProfile,
+  bucketDealTrend,
+  buildDealDistribution,
+  buildQuadrantPoints,
+  computeTrend,
+  computeWinRate,
+  type DealRowInput,
+} from './aggregate';
 
 type DB = SupabaseClient;
 
-export async function loadAgentRoster(db: DB): Promise<{
+// ============================================================
+// Multi-tenancy: every loader receives `accountId` and filters
+// by it. These queries run with the service-role admin client
+// (RLS bypassed), so without this filter they would leak data
+// across accounts.
+// ============================================================
+
+export async function loadAgentRoster(
+  db: DB,
+  accountId: string
+): Promise<{
   agents: AgentInfo[];
   profileIdMap: Map<string, string>;
 }> {
   const { data, error } = await db
     .from('profiles')
     .select('id, user_id, full_name, avatar_url, account_role')
+    .eq('account_id', accountId)
     .in('account_role', ['owner', 'admin', 'agent'])
     .order('full_name', { ascending: true });
 
@@ -43,11 +67,13 @@ export async function loadAgentRoster(db: DB): Promise<{
 }
 
 export async function loadAgentConversationStats(
-  db: DB
+  db: DB,
+  accountId: string
 ): Promise<Map<string, AgentConversationStats>> {
   const { data, error } = await db
     .from('conversations')
     .select('assigned_agent_id, status')
+    .eq('account_id', accountId)
     .not('assigned_agent_id', 'is', null);
 
   if (error) throw error;
@@ -80,12 +106,17 @@ export async function loadAgentConversationStats(
 
 export async function loadAgentMessageStats(
   db: DB,
+  accountId: string,
   fromDate: string
 ): Promise<Map<string, AgentMessageStats>> {
   const { data, error } = await db
     .from('messages')
-    .select('sender_id')
+    // `messages` has no account_id column; it inherits the account
+    // via the conversation FK. Filter through an inner embed so rows
+    // outside this account are excluded.
+    .select('sender_id, conversation:conversations!inner(account_id)')
     .eq('sender_type', 'agent')
+    .eq('conversation.account_id', accountId)
     .gte('created_at', fromDate);
 
   if (error) throw error;
@@ -106,11 +137,15 @@ export async function loadAgentMessageStats(
 
 export async function loadAgentResponseTimes(
   db: DB,
+  accountId: string,
   fromDate: string
 ): Promise<Map<string, AgentResponseTime>> {
   const { data, error } = await db
     .from('messages')
-    .select('conversation_id, sender_type, sender_id, created_at')
+    .select(
+      'conversation_id, sender_type, sender_id, created_at, conversation:conversations!inner(account_id)'
+    )
+    .eq('conversation.account_id', accountId)
     .gte('created_at', fromDate)
     .order('conversation_id', { ascending: true })
     .order('created_at', { ascending: true });
@@ -175,115 +210,172 @@ export async function loadAgentResponseTimes(
   return result;
 }
 
-export async function loadAgentDealStats(
-  db: DB
-): Promise<Map<string, AgentDealStats>> {
+// ------------------------------------------------------------
+// Deals — fetched once for the whole account window, then sliced
+// by the pure helpers in aggregate.ts. One query powers the trend,
+// quadrant, distribution and per-agent stats.
+// ------------------------------------------------------------
+
+async function fetchDealRowsInRange(
+  db: DB,
+  accountId: string,
+  fromDate: string
+): Promise<DealRowInput[]> {
   const { data, error } = await db
     .from('deals')
-    .select('assigned_to, status, value')
-    .not('assigned_to', 'is', null);
-
+    .select('assigned_to, status, value, created_at')
+    .eq('account_id', accountId)
+    .gte('created_at', fromDate);
   if (error) throw error;
+  return (data ?? []) as DealRowInput[];
+}
+
+async function fetchAllDealRows(
+  db: DB,
+  accountId: string
+): Promise<DealRowInput[]> {
+  const { data, error } = await db
+    .from('deals')
+    .select('assigned_to, status, value, created_at')
+    .eq('account_id', accountId);
+  if (error) throw error;
+  return (data ?? []) as DealRowInput[];
+}
+
+/**
+ * Build per-agent deal stats (with win-rate, avg value and trend)
+ * from two windows of deal rows.
+ */
+function buildAgentDealStats(
+  currentRows: readonly DealRowInput[],
+  prevRows: readonly DealRowInput[],
+  profileIdMap: Map<string, string>
+): Map<string, AgentDealStats> {
+  const curByAgent = aggregateDealsByProfile(currentRows);
+  const prevByAgent = aggregateDealsByProfile(prevRows);
 
   const map = new Map<string, AgentDealStats>();
-
-  for (const row of data ?? []) {
-    const profileId = row.assigned_to as string;
-    if (!map.has(profileId)) {
-      map.set(profileId, {
-        agentId: profileId,
-        dealsOpen: 0,
-        dealsWon: 0,
-        dealsLost: 0,
-        totalValueWon: 0,
-      });
-    }
-    const s = map.get(profileId)!;
-    if (row.status === 'open') s.dealsOpen++;
-    if (row.status === 'won') {
-      s.dealsWon++;
-      s.totalValueWon += Number(row.value) || 0;
-    }
-    if (row.status === 'lost') s.dealsLost++;
+  for (const [profileId, agg] of curByAgent) {
+    const userId = profileIdMap.get(profileId);
+    if (!userId) continue;
+    const prevWon = prevByAgent.get(profileId)?.dealsWon ?? 0;
+    map.set(userId, {
+      agentId: userId,
+      totalDeals: agg.dealsOpen + agg.dealsWon + agg.dealsLost,
+      dealsOpen: agg.dealsOpen,
+      dealsWon: agg.dealsWon,
+      dealsLost: agg.dealsLost,
+      totalValueWon: agg.totalValueWon,
+      winRate: computeWinRate(agg.dealsWon, agg.dealsLost),
+      avgDealValue:
+        agg.dealsWon > 0 ? agg.totalValueWon / agg.dealsWon : null,
+      trend: computeTrend(agg.dealsWon, prevWon),
+    });
   }
 
   return map;
 }
 
-export async function loadFlowHandoffStats(db: DB): Promise<FlowHandoffStat[]> {
-  const { data: flows, error: flowsErr } = await db
-    .from('flows')
-    .select('id, name')
-    .order('name', { ascending: true });
-  if (flowsErr) throw flowsErr;
-
-  const { data: runs, error: runsErr } = await db
-    .from('flow_runs')
-    .select('flow_id, status');
-  if (runsErr) throw runsErr;
-
-  const flowNames = new Map<string, string>();
-  for (const f of flows ?? []) flowNames.set(f.id, f.name);
-
-  const stats = new Map<string, { total: number; handoff: number }>();
-
-  for (const r of runs ?? []) {
-    if (!stats.has(r.flow_id)) {
-      stats.set(r.flow_id, { total: 0, handoff: 0 });
-    }
-    const s = stats.get(r.flow_id)!;
-    s.total++;
-    if (r.status === 'handed_off') s.handoff++;
-  }
-
-  const result: FlowHandoffStat[] = [];
-  for (const [flowId, s] of stats) {
-    result.push({
-      flowId,
-      flowName: flowNames.get(flowId) ?? 'Flow sin nombre',
-      totalRuns: s.total,
-      handoffRuns: s.handoff,
-      handoffRate: s.total > 0 ? s.handoff / s.total : 0,
-    });
-  }
-
-  result.sort((a, b) => b.handoffRate - a.handoffRate);
-
-  return result;
-}
+// ------------------------------------------------------------
+// Top-level composer.
+// ------------------------------------------------------------
 
 export async function loadAgentPerformance(
   db: DB,
+  accountId: string,
   rangeDays: number
 ): Promise<{
   data: AgentPerformanceData;
-  flowStats: FlowHandoffStat[];
+  dealTrend: DealTrendPoint[];
+  agentQuadrant: AgentQuadrantPoint[];
+  dealDistribution: DealDistributionSlice[];
 }> {
   const fromDate = daysAgoStart(rangeDays - 1).toISOString();
+  // Previous window of equal length, for the trend (▲/▼) column.
+  const prevFromIso = daysAgoStart(rangeDays * 2 - 1).toISOString();
 
-  const [
-    { agents, profileIdMap },
-    convStats,
-    msgStats,
-    respTimes,
-    dealStatsByProfile,
-    flowStats,
-  ] = await Promise.all([
-    loadAgentRoster(db),
-    loadAgentConversationStats(db),
-    loadAgentMessageStats(db, fromDate),
-    loadAgentResponseTimes(db, fromDate),
-    loadAgentDealStats(db),
-    loadFlowHandoffStats(db),
+  const { agents, profileIdMap } = await loadAgentRoster(db, accountId);
+
+  // Fetch the deal windows once; everything below is pure math on
+  // the in-memory rows, so we avoid re-querying for each chart.
+  const [currentDealRows, prevDealRows, allDealRows] = await Promise.all([
+    fetchDealRowsInRange(db, accountId, fromDate),
+    fetchDealRowsInRange(db, accountId, prevFromIso),
+    fetchAllDealRows(db, accountId),
   ]);
 
-  const dealStats = new Map<string, AgentDealStats>();
-  for (const [profileId, stats] of dealStatsByProfile) {
-    const userId = profileIdMap.get(profileId);
-    if (userId) {
-      dealStats.set(userId, { ...stats, agentId: userId });
-    }
+  // ------------------------------------------------------------
+  // Virtual "Sin asignar" agent.
+  // Deals without assigned_to (or whose assignee isn't in the
+  // active roster) become invisible to per-agent stats. In a
+  // single-tenant portal this is the common case — we create a
+  // virtual agent row so those deals still appear in ranking,
+  // quadrant and distribution charts.
+  // ------------------------------------------------------------
+  const hasOrphanDeals = allDealRows.some(
+    r => !r.assigned_to || !profileIdMap.has(r.assigned_to)
+  );
+  let unassignedProfileId: string | undefined;
+  if (hasOrphanDeals) {
+    unassignedProfileId = randomUUID();
+    const virtualAgent: AgentInfo = {
+      userId: unassignedProfileId,
+      profileId: unassignedProfileId,
+      fullName: 'Sin asignar',
+      avatarUrl: null,
+      role: 'agent',
+      isUnassigned: true,
+    };
+    agents.push(virtualAgent);
+    profileIdMap.set(unassignedProfileId, unassignedProfileId);
   }
+
+  const assignToProfile = (pid: string | null): string | null => {
+    if (!pid) return unassignedProfileId ?? null;
+    if (!profileIdMap.has(pid)) return unassignedProfileId ?? null;
+    return pid;
+  };
+
+  // The conversation/message/response loaders still hit their own
+  // tables; they're independent of the deal rows.
+  const [convStats, msgStats, respTimes] = await Promise.all([
+    loadAgentConversationStats(db, accountId),
+    loadAgentMessageStats(db, accountId, fromDate),
+    loadAgentResponseTimes(db, accountId, fromDate),
+  ]);
+
+  const dealStats = buildAgentDealStats(
+    currentDealRows.map(r => ({ ...r, assigned_to: assignToProfile(r.assigned_to) })),
+    prevDealRows.map(r => ({ ...r, assigned_to: assignToProfile(r.assigned_to) })),
+    profileIdMap
+  );
+
+  const dealTrend = bucketDealTrend(currentDealRows, fromDate);
+
+  const nameByUserId = new Map<string, string>();
+  for (const a of agents) nameByUserId.set(a.userId, a.fullName);
+
+  const normalizedAll = allDealRows.map(r => ({
+    ...r,
+    assigned_to: assignToProfile(r.assigned_to),
+  }));
+  const allByProfile = aggregateDealsByProfile(normalizedAll);
+  const agentQuadrant = buildQuadrantPoints(
+    allByProfile,
+    profileIdMap,
+    nameByUserId
+  );
+
+  const perAgentValue: { name: string; value: number }[] = [];
+  for (const [profileId, agg] of allByProfile) {
+    const userId = profileIdMap.get(profileId);
+    if (!userId || agg.totalValueWon <= 0) continue;
+    perAgentValue.push({
+      name: nameByUserId.get(userId) ?? 'Agente',
+      value: agg.totalValueWon,
+    });
+  }
+  const dealDistribution = buildDealDistribution(perAgentValue);
 
   const rows: AgentPerformanceRow[] = agents.map((agent) => ({
     agent,
@@ -293,30 +385,26 @@ export async function loadAgentPerformance(
     deals: dealStats.get(agent.userId) ?? null,
   }));
 
-  const allRespTimes = Array.from(respTimes.values());
-  const totalSamples = allRespTimes.reduce((sum, r) => sum + r.sampleCount, 0);
-  const weightedRespSum = allRespTimes.reduce(
-    (sum, r) => sum + (r.avgMinutes ?? 0) * r.sampleCount,
+  const accountTotals = aggregateAccountDeals(allDealRows);
+  const matriculados = rows.reduce(
+    (s, r) => s + (r.deals?.dealsWon ?? 0),
     0
   );
+  const perdidos = rows.reduce((s, r) => s + (r.deals?.dealsLost ?? 0), 0);
 
   const totals = {
-    totalConversations: rows.reduce(
-      (s, r) => s + (r.conversations?.totalAssigned ?? 0),
-      0
-    ),
-    totalMessages: rows.reduce(
-      (s, r) => s + (r.messages?.messagesSent ?? 0),
-      0
-    ),
-    totalDealsWon: rows.reduce((s, r) => s + (r.deals?.dealsWon ?? 0), 0),
-    totalValueWon: rows.reduce((s, r) => s + (r.deals?.totalValueWon ?? 0), 0),
-    avgResponseMinutes:
-      totalSamples > 0 ? weightedRespSum / totalSamples : null,
+    totalDealsCreated: accountTotals.totalCreated,
+    matriculados,
+    perdidos,
+    comisiones: accountTotals.totalValueWon,
+    pipelineValue: accountTotals.totalValueOpen,
+    winRate: computeWinRate(matriculados, perdidos),
   };
 
   return {
     data: { agents, rows, totals },
-    flowStats,
+    dealTrend,
+    agentQuadrant,
+    dealDistribution,
   };
 }

@@ -34,6 +34,22 @@ para Colombia.
 - Nunca imprimas, loguees ni incluyas en diffs valores de env vars,
   tokens, keys ni secrets.
 
+### Single-tenant (NO multi-tenencia)
+- El CRM opera como **single-tenant empresarial**. `account_id` existe
+  en las tablas por herencia del upstream (wacrm), pero TODAS las filas
+  comparten la misma cuenta corporativa.
+- **NUNCA** filtres por `account_id` pensando que hay tenants separados.
+  Todos los perfiles, deals, contactos y conversaciones pertenecen a la
+  misma organización. Si una query filtrada por `account_id` devuelve 0
+  filas, revisa si los datos existen bajo otro `account_id` antes de
+  concluir que "no hay datos".
+- Cualquier loader de agentes (roster, analytics, presencia, etc.) debe
+  consultar perfiles SIN filtrar por `account_id`, o usando el
+  `account_id` unificado de la compañía (`5f88a46f-0433-41df-9646-fd8ff36a2cdb`).
+- Los usuarios con rol `owner`/`admin`/`agent` son agentes del equipo y
+  deben aparecer en todas las secciones (inbox, agent-performance,
+  settings → miembros) sin importar su `account_id` original.
+
 ### Decisiones críticas — preguntar antes de continuar
 Detente y pregunta cuando haya:
 - Más de un enfoque razonable con impacto distinto.
@@ -136,10 +152,14 @@ pnpm test:watch                      # vitest en watch
   `canViewOnly`, `canDeleteAccount`, `canTransferOwnership`) en lugar
   de comparar strings de rol. Esto mantiene la política en un solo
   archivo.
-- **Multi-tenencia:** toda tabla lleva `account_id` REFERENCES. RLS
-  enforcement vía `is_account_member(account_id, min_role)`. En
-  server-side sin sesión (API pública), filtrar explícitamente por
-  `accountId` del contexto (ver `api-context.ts`).
+- **Single-tenant:** `account_id` existe en todas las tablas por
+  herencia del upstream wacrm, pero TODAS las filas pertenecen a la
+  misma cuenta corporativa. NO filtres por `account_id` para ocultar
+  datos entre usuarios. Para consultas de agentes (roster, analytics,
+  presencia), omite el filtro de cuenta o usa el `account_id` unificado
+  (`5f88a46f-0433-41df-9646-fd8ff36a2cdb`). RLS vía
+  `is_account_member(account_id, min_role)`. En server-side sin sesión
+  (API pública), usar `accountId` del contexto (ver `api-context.ts`).
 - **Encriptación:** secrets de WhatsApp se guardan AES-256-GCM
   (formato `iv:ct:tag`). Usar `encrypt()` / `decrypt()` de
   `src/lib/whatsapp/encryption.ts`. La key está en
@@ -154,7 +174,7 @@ pnpm test:watch                      # vitest en watch
 
 | # | Módulo | Ruta principal | Propósito |
 |---|--------|----------------|-----------|
-| 1 | Auth & RBAC | `src/lib/auth/`, `src/middleware.ts` | Supabase Auth, 4 roles, multi-tenencia x invite |
+| 1 | Auth & RBAC | `src/lib/auth/`, `src/middleware.ts` | Supabase Auth, 4 roles, single-tenant, invitaciones |
 | 2 | Dashboard | `(dashboard)/` | Métricas, charts (Recharts), donut pipeline, activity feed |
 | 3 | Inbox | `(dashboard)/inbox` | Bandeja multi-agente, composer, quoting, reactions, status tracking |
 | 4 | Contactos | `(dashboard)/contacts` | CRUD + tags + custom fields + CSV import + dedup |
@@ -222,3 +242,17 @@ API): **`docs/schema.md`** y **`docs/public-api.md`**.
 7. Sin secrets en el diff: verifica que ningún `.env*` file real, token
    ni key esté incluido en los cambios.
 8. Un cambio lógico por commit. Commit message: imperativo + conciso.
+
+## 10. Lecciones operativas
+
+### Bug: agent-performance sin datos (Jul 2026)
+- **Síntoma:** la página mostraba "Sin datos suficientes" pese a existir
+  17 deals en la BD.
+- **Causa raíz:** los datos de Comercial1 y Comercial2 estaban en
+  `account_id` distintos al de Jefferson Calderón. El loader (`queries.ts`)
+  filtraba por `account_id` correctamente, pero ese ID no tenía datos.
+- **Solución:** migrar todos los registros a la cuenta corporativa
+  unificada (`UPDATE cuenta SET account_id = '5f88a46f-...'` en 20+ tablas).
+- **Prevención:** toda query de agentes/equipo debe omitir el filtro de
+  `account_id` (o usar el unificado). Si un loader devuelve 0 filas y hay
+  datos en la BD, verifica primero si están bajo otro `account_id`.

@@ -3,26 +3,41 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTranslations } from 'next-intl';
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrency, formatCurrencyShort } from '@/lib/currency';
 import {
-  MessageSquare,
-  Timer,
   Trophy,
   DollarSign,
   TrendingUp,
+  Target,
   AlertCircle,
   ArrowUp,
   ArrowDown,
+  Minus,
   ArrowUpDown,
 } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart as RechartsBarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import type {
   AgentPerformanceData,
   AgentPerformanceRow,
-  FlowHandoffStat,
+  AgentQuadrantPoint,
+  DealDistributionSlice,
+  DealTrendPoint,
 } from '@/lib/agent-analytics/types';
 
-import { BarChart } from '@/components/tremor/bar-chart';
+import { QuadrantChart } from '@/components/dashboard/quadrant-chart';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -40,25 +55,41 @@ type RangeDays = 7 | 30 | 90;
 
 type SortKey =
   | 'agent'
-  | 'conversations'
-  | 'messages'
-  | 'responseTime'
-  | 'resolution'
-  | 'dealsWon'
-  | 'valueWon';
+  | 'solicitudes'
+  | 'matriculados'
+  | 'perdidos'
+  | 'winRate'
+  | 'comisiones'
+  | 'avgCommission';
 
 type SortDir = 'asc' | 'desc';
+
+// Pie slice palette — distinct, accessible, readable on card bg.
+const DONUT_COLORS = [
+  '#3b82f6', // blue
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#94a3b8', // slate (Otros)
+];
+
+interface ApiResponse {
+  data: AgentPerformanceData;
+  dealTrend: DealTrendPoint[];
+  agentQuadrant: AgentQuadrantPoint[];
+  dealDistribution: DealDistributionSlice[];
+}
 
 export default function AgentPerformancePage() {
   const t = useTranslations('agentPerformance');
   const { isAdmin, isOwner, defaultCurrency } = useAuth();
 
-  const [data, setData] = useState<AgentPerformanceData | null>(null);
-  const [flowStats, setFlowStats] = useState<FlowHandoffStat[]>([]);
+  const [result, setResult] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [range, setRange] = useState<RangeDays>(30);
-  const [sortKey, setSortKey] = useState<SortKey>('conversations');
+  const [sortKey, setSortKey] = useState<SortKey>('comisiones');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   useEffect(() => {
@@ -72,10 +103,9 @@ export default function AgentPerformancePage() {
           const body = await res.json().catch(() => ({}));
           throw new Error(body?.error ?? `HTTP ${res.status}`);
         }
-        const result = await res.json();
+        const json: ApiResponse = await res.json();
         if (cancelled) return;
-        setData(result.data);
-        setFlowStats(result.flowStats);
+        setResult(json);
       } catch (err) {
         if (cancelled) return;
         console.error('[agent-performance] load failed:', err);
@@ -90,57 +120,65 @@ export default function AgentPerformancePage() {
     };
   }, [range]);
 
-  // Sorted ranking rows. Computed before the role-gate early return so
-  // the hook order stays stable across renders (rules-of-hooks).
-  // Null avgMinutes always sorts last regardless of direction —
-  // "no data" should never jump to the top of a descending list.
+  // Sorted ranking. Computed before the role-gate early return so the
+  // hook order stays stable across renders (rules-of-hooks). Null
+  // win-rate always sorts last in descending order — "no closed
+  // deals" should never jump to the top.
   const sortedRows = useMemo<AgentPerformanceRow[]>(() => {
-    if (!data) return [];
-    const rows = [...data.rows];
+    if (!result) return [];
+    const rows = [...result.data.rows];
     const dir = sortDir === 'asc' ? 1 : -1;
     rows.sort((a, b) => {
+      const ad = a.deals;
+      const bd = b.deals;
       switch (sortKey) {
         case 'agent':
           return a.agent.fullName.localeCompare(b.agent.fullName) * dir;
-        case 'conversations':
-          return (
-            ((a.conversations?.totalAssigned ?? 0) -
-              (b.conversations?.totalAssigned ?? 0)) *
-            dir
-          );
-        case 'messages':
-          return (
-            ((a.messages?.messagesSent ?? 0) -
-              (b.messages?.messagesSent ?? 0)) *
-            dir
-          );
-        case 'responseTime': {
-          const av = a.responseTime?.avgMinutes;
-          const bv = b.responseTime?.avgMinutes;
+        case 'solicitudes':
+          return ((ad?.totalDeals ?? 0) - (bd?.totalDeals ?? 0)) * dir;
+        case 'matriculados':
+          return ((ad?.dealsWon ?? 0) - (bd?.dealsWon ?? 0)) * dir;
+        case 'perdidos':
+          return ((ad?.dealsLost ?? 0) - (bd?.dealsLost ?? 0)) * dir;
+        case 'winRate': {
+          const av = ad?.winRate;
+          const bv = bd?.winRate;
           if (av == null && bv == null) return 0;
           if (av == null) return 1;
           if (bv == null) return -1;
           return (av - bv) * dir;
         }
-        case 'resolution':
+        case 'comisiones':
           return (
-            ((a.conversations?.resolutionRate ?? 0) -
-              (b.conversations?.resolutionRate ?? 0)) *
-            dir
+            ((ad?.totalValueWon ?? 0) - (bd?.totalValueWon ?? 0)) * dir
           );
-        case 'dealsWon':
-          return ((a.deals?.dealsWon ?? 0) - (b.deals?.dealsWon ?? 0)) * dir;
-        case 'valueWon':
-          return (
-            ((a.deals?.totalValueWon ?? 0) - (b.deals?.totalValueWon ?? 0)) *
-            dir
-          );
+        case 'avgCommission': {
+          const av = ad?.avgDealValue;
+          const bv = bd?.avgDealValue;
+          if (av == null && bv == null) return 0;
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          return (av - bv) * dir;
+        }
         default:
           return 0;
       }
     });
     return rows;
-  }, [data, sortKey, sortDir]);
+  }, [result, sortKey, sortDir]);
+
+  // Top-K commission chart data. Computed before the role-gate early
+  // return so the hook order stays stable (rules-of-hooks).
+  const catCommission = t('catCommission');
+  const topChartData = useMemo(
+    () =>
+      [...(result?.dealDistribution ?? [])]
+        .filter((s) => !s.isOther)
+        .map((s) => ({ name: s.name, [catCommission]: s.value }))
+        .sort((a, b) => (b[catCommission] as number) - (a[catCommission] as number))
+        .slice(0, 10),
+    [result?.dealDistribution, catCommission]
+  );
 
   if (!isAdmin && !isOwner) {
     return (
@@ -154,54 +192,28 @@ export default function AgentPerformancePage() {
     );
   }
 
-  const fmtMinutes = (mins: number | null | undefined): string => {
-    if (mins == null) return '—';
-    if (mins < 1) return `${Math.max(1, Math.round(mins * 60))}s`;
-    if (mins < 60) return `${mins.toFixed(1)}m`;
-    return `${(mins / 60).toFixed(1)}h`;
-  };
+  const data = result?.data;
+  const totals = data?.totals;
 
-  const fmtPercent = (rate: number | undefined): string => {
+  const fmtPercent = (rate: number | null | undefined): string => {
     if (rate == null) return '—';
     return `${(rate * 100).toFixed(0)}%`;
   };
 
-  // i18n labels used as BarChart data keys + categories so legends and
-  // tooltips render in the active locale instead of hardcoded Spanish.
-  const catWorkload = t('catWorkload');
-  const catResponseTime = t('catResponseTime');
-  const catWon = t('catWon');
-  const catLost = t('catLost');
-  const catHandoff = t('catHandoff');
+  // i18n category labels — used as chart series keys so legends and
+  // tooltips render in the active locale.
+  const catSolicitudes = t('catSolicitudes');
+  const catMatriculados = t('catMatriculados');
 
-  const workloadChartData =
-    data?.rows.map((r) => ({
-      name: r.agent.fullName,
-      [catWorkload]: r.conversations?.activeNow ?? 0,
+  const trendChartData =
+    result?.dealTrend.map((p) => ({
+      name: fmtWeek(p.date),
+      [catSolicitudes]: p.created,
+      [catMatriculados]: p.won,
     })) ?? [];
 
-  const responseTimeChartData =
-    data?.rows
-      .filter((r) => r.responseTime?.avgMinutes != null)
-      .map((r) => ({
-        name: r.agent.fullName,
-        [catResponseTime]: r.responseTime?.avgMinutes ?? 0,
-      })) ?? [];
-
-  const dealsChartData =
-    data?.rows
-      .filter((r) => r.deals && (r.deals.dealsWon > 0 || r.deals.dealsLost > 0))
-      .map((r) => ({
-        name: r.agent.fullName,
-        [catWon]: r.deals?.dealsWon ?? 0,
-        [catLost]: r.deals?.dealsLost ?? 0,
-      })) ?? [];
-
-  const hasAnyData =
-    data != null &&
-    data.rows.some(
-      (r) => r.conversations != null || r.messages != null || r.deals != null
-    );
+  const hasAnyDeals =
+    totals != null && (totals.totalDealsCreated > 0 || totals.matriculados > 0 || totals.perdidos > 0 || totals.pipelineValue > 0);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -245,7 +257,7 @@ export default function AgentPerformancePage() {
           title={t('errorTitle')}
           hint={t('errorHint')}
         />
-      ) : !data || !hasAnyData ? (
+      ) : !result || !hasAnyDeals ? (
         <EmptyState
           icon={TrendingUp}
           title={t('noData')}
@@ -253,96 +265,197 @@ export default function AgentPerformancePage() {
         />
       ) : (
         <>
+          {/* KPI cards — business metrics, not chat volume. */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard
-              icon={MessageSquare}
-              label={t('totalConversations')}
-              value={String(data.totals.totalConversations)}
-            />
-            <KpiCard
-              icon={MessageSquare}
-              label={t('totalMessages')}
-              value={String(data.totals.totalMessages)}
-            />
-            <KpiCard
               icon={Trophy}
-              label={t('totalDealsWon')}
-              value={String(data.totals.totalDealsWon)}
+              label={t('kpiMatriculados')}
+              value={String(totals!.matriculados)}
             />
             <KpiCard
               icon={DollarSign}
-              label={t('totalValueWon')}
-              value={formatCurrency(data.totals.totalValueWon, defaultCurrency)}
+              label={t('kpiComisiones')}
+              value={formatCurrency(totals!.comisiones, defaultCurrency)}
+            />
+            <KpiCard
+              icon={TrendingUp}
+              label={t('kpiWinRate')}
+              value={fmtPercent(totals!.winRate)}
+            />
+            <KpiCard
+              icon={Target}
+              label={t('kpiPipeline')}
+              value={formatCurrencyShort(totals!.pipelineValue, defaultCurrency)}
             />
           </div>
 
-          <ChartCard
-            title={t('workloadTitle')}
-            subtitle={t('workloadSubtitle')}
-          >
-            {workloadChartData.length > 0 ? (
-              <BarChart
-                data={workloadChartData}
-                index="name"
-                categories={[catWorkload]}
-                colors={['blue']}
-                showLegend={false}
-                yAxisWidth={48}
-                className="h-[260px]"
-              />
-            ) : (
-              <EmptyState
-                icon={MessageSquare}
-                title={t('noWorkload')}
-                hint={t('noWorkloadHint')}
-              />
-            )}
-          </ChartCard>
+          {/* Trend + quadrant — side by side on large screens. */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ChartCard title={t('trendTitle')} subtitle={t('trendSubtitle')}>
+              {trendChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart
+                    data={trendChartData}
+                    margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="gSolicitudes" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gMatriculados" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="name"
+                      stroke="var(--muted-foreground)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="var(--muted-foreground)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      width={32}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      labelStyle={{ color: 'var(--foreground)' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey={catSolicitudes}
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      fill="url(#gSolicitudes)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey={catMatriculados}
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      fill="url(#gMatriculados)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyState
+                  icon={TrendingUp}
+                  title={t('noTrend')}
+                  hint={t('noTrendHint')}
+                />
+              )}
+            </ChartCard>
 
-          <ChartCard
-            title={t('responseTimeTitle')}
-            subtitle={t('responseTimeSubtitle')}
-          >
-            {responseTimeChartData.length > 0 ? (
-              <BarChart
-                data={responseTimeChartData}
-                index="name"
-                categories={[catResponseTime]}
-                colors={['violet']}
-                showLegend={false}
-                yAxisWidth={48}
-                valueFormatter={(v) => fmtMinutes(v as number)}
-                className="h-[260px]"
-              />
-            ) : (
-              <EmptyState
-                icon={Timer}
-                title={t('noResponseTime')}
-                hint={t('noResponseTimeHint')}
-              />
-            )}
-          </ChartCard>
+            <ChartCard
+              title={t('quadrantTitle')}
+              subtitle={t('quadrantSubtitle')}
+            >
+              {result.agentQuadrant.length > 0 ? (
+                <QuadrantChart
+                  points={result.agentQuadrant}
+                  currency={defaultCurrency}
+                  labels={{
+                    axisX: t('qAxisX'),
+                    axisY: t('qAxisY'),
+                    deals: t('qDeals'),
+                    won: t('qWon'),
+                    winRate: t('qWinRate'),
+                    commission: t('qCommission'),
+                    star: t('qStar'),
+                    coach: t('qCoach'),
+                    underutilized: t('qUnderutilized'),
+                    novice: t('qNovice'),
+                  }}
+                />
+              ) : (
+                <EmptyState
+                  icon={Target}
+                  title={t('noQuadrant')}
+                  hint={t('noQuadrantHint')}
+                />
+              )}
+            </ChartCard>
+          </div>
 
-          <ChartCard title={t('dealsTitle')} subtitle={t('dealsSubtitle')}>
-            {dealsChartData.length > 0 ? (
-              <BarChart
-                data={dealsChartData}
-                index="name"
-                categories={[catWon, catLost]}
-                colors={['emerald', 'pink']}
-                showLegend={true}
-                yAxisWidth={48}
-                className="h-[260px]"
-              />
-            ) : (
-              <EmptyState
-                icon={Trophy}
-                title={t('noDeals')}
-                hint={t('noDealsHint')}
-              />
-            )}
-          </ChartCard>
+          {/* Top K + distribution donut. */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ChartCard title={t('topTitle')} subtitle={t('topSubtitle')}>
+              {topChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <RechartsBarChart
+                    data={topChartData}
+                    layout="vertical"
+                    margin={{ top: 0, right: 24, bottom: 0, left: 8 }}
+                  >
+                    <XAxis
+                      type="number"
+                      stroke="var(--muted-foreground)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v: number) =>
+                        formatCurrencyShort(v, defaultCurrency)
+                      }
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      stroke="var(--muted-foreground)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      width={96}
+                    />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      formatter={(v) =>
+                        formatCurrency(Number(v), defaultCurrency)
+                      }
+                    />
+                    <Bar
+                      dataKey={catCommission}
+                      fill="#3b82f6"
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyState
+                  icon={DollarSign}
+                  title={t('noTop')}
+                  hint={t('noTopHint')}
+                />
+              )}
+            </ChartCard>
 
+            <ChartCard
+              title={t('distTitle')}
+              subtitle={t('distSubtitle')}
+            >
+              {result.dealDistribution.length > 0 ? (
+                <DonutDistribution
+                  slices={result.dealDistribution}
+                  total={totals!.comisiones}
+                  currency={defaultCurrency}
+                  totalLabel={t('distTotal')}
+                />
+              ) : (
+                <EmptyState
+                  icon={DollarSign}
+                  title={t('noDist')}
+                  hint={t('noDistHint')}
+                />
+              )}
+            </ChartCard>
+          </div>
+
+          {/* Ranking table — the tactical detail. */}
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">{t('rankingTitle')}</CardTitle>
@@ -361,75 +474,75 @@ export default function AgentPerformancePage() {
                       hint={t('sortHint')}
                     />
                     <SortableHead
-                      label={t('colConversations')}
-                      keyName="conversations"
+                      label={t('colSolicitudes')}
+                      keyName="solicitudes"
                       activeKey={sortKey}
                       dir={sortDir}
                       onToggle={toggleSort}
                       hint={t('sortHint')}
                     />
                     <SortableHead
-                      label={t('colMessages')}
-                      keyName="messages"
+                      label={t('colMatriculados')}
+                      keyName="matriculados"
                       activeKey={sortKey}
                       dir={sortDir}
                       onToggle={toggleSort}
                       hint={t('sortHint')}
                     />
                     <SortableHead
-                      label={t('colResponseTime')}
-                      keyName="responseTime"
+                      label={t('colPerdidos')}
+                      keyName="perdidos"
                       activeKey={sortKey}
                       dir={sortDir}
                       onToggle={toggleSort}
                       hint={t('sortHint')}
                     />
                     <SortableHead
-                      label={t('colResolution')}
-                      keyName="resolution"
+                      label={t('colWinRate')}
+                      keyName="winRate"
                       activeKey={sortKey}
                       dir={sortDir}
                       onToggle={toggleSort}
                       hint={t('sortHint')}
                     />
                     <SortableHead
-                      label={t('colDealsWon')}
-                      keyName="dealsWon"
+                      label={t('colComisiones')}
+                      keyName="comisiones"
                       activeKey={sortKey}
                       dir={sortDir}
                       onToggle={toggleSort}
                       hint={t('sortHint')}
                     />
                     <SortableHead
-                      label={t('colValueWon')}
-                      keyName="valueWon"
+                      label={t('colAvgCommission')}
+                      keyName="avgCommission"
                       activeKey={sortKey}
                       dir={sortDir}
                       onToggle={toggleSort}
                       hint={t('sortHint')}
                     />
+                    <TableHead className="text-right text-xs font-medium">
+                      {t('colTrend')}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedRows.map((row) => (
                     <TableRow key={row.agent.userId}>
                       <TableCell className="font-medium">
-                        {row.agent.fullName}
+                        {row.agent.isUnassigned ? t('unassigned') : row.agent.fullName}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {row.conversations?.totalAssigned ?? 0}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {row.messages?.messagesSent ?? 0}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmtMinutes(row.responseTime?.avgMinutes)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmtPercent(row.conversations?.resolutionRate)}
+                        {row.deals?.totalDeals ?? 0}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {row.deals?.dealsWon ?? 0}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {row.deals?.dealsLost ?? 0}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtPercent(row.deals?.winRate)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatCurrency(
@@ -437,35 +550,123 @@ export default function AgentPerformancePage() {
                           defaultCurrency
                         )}
                       </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {row.deals?.avgDealValue != null
+                          ? formatCurrency(row.deals.avgDealValue, defaultCurrency)
+                          : '—'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <TrendIndicator trend={row.deals?.trend ?? 'unknown'} />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
-
-          {flowStats.length > 0 && (
-            <ChartCard
-              title={t('handoffTitle')}
-              subtitle={t('handoffSubtitle')}
-            >
-              <BarChart
-                data={flowStats.slice(0, 10).map((f) => ({
-                  name: f.flowName,
-                  [catHandoff]: Math.round(f.handoffRate * 100),
-                }))}
-                index="name"
-                categories={[catHandoff]}
-                colors={['amber']}
-                showLegend={false}
-                yAxisWidth={48}
-                valueFormatter={(v) => `${v}%`}
-                className="h-[260px]"
-              />
-            </ChartCard>
-          )}
         </>
       )}
+    </div>
+  );
+}
+
+const tooltipStyle = {
+  backgroundColor: 'var(--popover)',
+  border: '1px solid var(--border)',
+  borderRadius: '0.5rem',
+  fontSize: '12px',
+  color: 'var(--foreground)',
+} as const;
+
+/** Format an ISO week-start date as a short label: "Sem. 14 jul". */
+function fmtWeek(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-CO', {
+    day: '2-digit',
+    month: 'short',
+  });
+}
+
+function TrendIndicator({
+  trend,
+}: {
+  trend: 'up' | 'down' | 'flat' | 'unknown';
+}) {
+  if (trend === 'unknown') return <span className="text-muted-foreground">—</span>;
+  if (trend === 'up')
+    return <ArrowUp className="ml-auto h-4 w-4 text-emerald-500" aria-label="up" />;
+  if (trend === 'down')
+    return <ArrowDown className="ml-auto h-4 w-4 text-pink-500" aria-label="down" />;
+  return <Minus className="ml-auto h-4 w-4 text-muted-foreground" aria-label="flat" />;
+}
+
+function DonutDistribution({
+  slices,
+  total,
+  currency,
+  totalLabel,
+}: {
+  slices: DealDistributionSlice[];
+  total: number;
+  currency: string;
+  totalLabel: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-5 sm:flex-row">
+      <div className="relative">
+        <ResponsiveContainer width={200} height={200}>
+          <PieChart>
+            <Pie
+              data={slices}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={56}
+              outerRadius={80}
+              paddingAngle={2}
+              stroke="none"
+            >
+              {slices.map((s, i) => (
+                <Cell
+                  key={s.name}
+                  fill={s.isOther ? DONUT_COLORS[5] : DONUT_COLORS[i % 5]}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={tooltipStyle}
+              formatter={(v) => formatCurrency(Number(v), currency)}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-muted-foreground text-[10px]">{totalLabel}</span>
+          <span className="text-foreground text-base font-semibold tabular-nums">
+            {formatCurrencyShort(total, currency)}
+          </span>
+        </div>
+      </div>
+      <ul className="w-full flex-1 space-y-2">
+        {slices.map((s, i) => (
+          <li key={s.name} className="flex items-center gap-2 text-xs">
+            <span
+              className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+              style={{
+                background: s.isOther ? DONUT_COLORS[5] : DONUT_COLORS[i % 5],
+              }}
+              aria-hidden
+            />
+            <span className="text-muted-foreground flex-1 truncate">{s.name}</span>
+            <span className="text-muted-foreground tabular-nums">
+              {Math.round(s.percentage * 100)}%
+            </span>
+            <span className="w-20 text-right text-muted-foreground tabular-nums">
+              {formatCurrencyShort(s.value, currency)}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -538,7 +739,7 @@ function KpiCard({
   label,
   value,
 }: {
-  icon: typeof MessageSquare;
+  icon: typeof Trophy;
   label: string;
   value: string;
 }) {
