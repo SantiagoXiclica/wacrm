@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertNoInvalidVariables,
   extractVariableIndices,
   TEMPLATE_LIMITS,
   validateBody,
@@ -25,6 +26,36 @@ describe('extractVariableIndices', () => {
   });
   it('returns empty array for no variables', () => {
     expect(extractVariableIndices('No vars here')).toEqual([]);
+  });
+});
+
+describe('assertNoInvalidVariables', () => {
+  it('passes for valid {{N}} variables', () => {
+    expect(() => assertNoInvalidVariables('Hi {{1}}', 'Body')).not.toThrow();
+    expect(() => assertNoInvalidVariables('{{1}} {{99}}', 'Body')).not.toThrow();
+  });
+  it('passes for text without any variables', () => {
+    expect(() => assertNoInvalidVariables('plain text', 'Body')).not.toThrow();
+  });
+  it('rejects {{0}}', () => {
+    expect(() => assertNoInvalidVariables('{{0}}', 'Body')).toThrow(/0.*1/);
+  });
+  it('rejects empty {{}}', () => {
+    expect(() => assertNoInvalidVariables('Hello {{}}', 'Body')).toThrow(/empty/);
+  });
+  it('rejects malformed {{-1}} and {{abc}}', () => {
+    expect(() => assertNoInvalidVariables('{{-1}}', 'Body')).toThrow(/invalid/);
+    expect(() => assertNoInvalidVariables('{{abc}}', 'Body')).toThrow(/invalid/);
+  });
+  it('rejects variables with spaces {{ 1 }}', () => {
+    expect(() => assertNoInvalidVariables('{{ 1 }}', 'Body')).toThrow(/invalid/);
+  });
+  it('rejects triple braces {{{1}}}', () => {
+    expect(() => assertNoInvalidVariables('{{{1}}}', 'Body')).toThrow(/invalid/);
+  });
+  it('includes the "where" label in the error', () => {
+    expect(() => assertNoInvalidVariables('{{0}}', 'Header'))
+      .toThrow(/Header/);
   });
 });
 
@@ -59,6 +90,12 @@ describe('validateBody', () => {
   it('accepts contiguous variables', () => {
     expect(validateBody('Hi {{1}} {{2}}')).toEqual([1, 2]);
   });
+  it('rejects {{0}} in body', () => {
+    expect(() => validateBody('Hello {{0}}')).toThrow(/0.*1|1/);
+  });
+  it('rejects empty {{}} in body', () => {
+    expect(() => validateBody('Hello {{}}')).toThrow(/empty/);
+  });
 });
 
 describe('validateFooter', () => {
@@ -70,6 +107,9 @@ describe('validateFooter', () => {
   });
   it('rejects variables in footer', () => {
     expect(() => validateFooter('Powered by {{1}}')).toThrow(/cannot contain/);
+  });
+  it('rejects {{0}} in footer', () => {
+    expect(() => validateFooter('Footer {{0}}')).toThrow(/0/);
   });
 });
 
@@ -93,6 +133,11 @@ describe('validateHeader', () => {
     expect(() =>
       validateHeader({ header_type: 'text', header_content: 'Hello {{2}}' }),
     ).toThrow(/must be \{\{1\}\}/);
+  });
+  it('text header rejects {{0}}', () => {
+    expect(() =>
+      validateHeader({ header_type: 'text', header_content: 'Hello {{0}}' }),
+    ).toThrow(/0/);
   });
   it('image header requires a URL or handle', () => {
     expect(() => validateHeader({ header_type: 'image' })).toThrow(
@@ -205,6 +250,18 @@ describe('validateButtons', () => {
         },
       ]),
     ).toThrow(/must be \{\{1\}\}/);
+  });
+  it('rejects URL with {{0}} variable', () => {
+    expect(() =>
+      validateButtons([
+        {
+          type: 'URL',
+          text: 'Go',
+          url: 'https://x/{{0}}',
+          example: 'foo',
+        },
+      ]),
+    ).toThrow(/0/);
   });
   it('rejects PHONE_NUMBER without phone_number', () => {
     expect(() =>
