@@ -1,9 +1,10 @@
 
 
+Para entrega
 
 
 
-- cocular en - http://localhost:5644/settings?tab=ai - miembros del equipo [0 en línea
+- ocular en - http://localhost:5644/settings?tab=ai - miembros del equipo [0 en línea
 1 ausente
 0 desconectado
 · 1 miembro] - no esta funcional y la verdad no agrega fucionalidad real.
