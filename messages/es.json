@@ -76,7 +76,9 @@
       "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
       "successTitle": "Revisa tu correo",
       "successDescription": "Hemos enviado un enlace de confirmación a {email}. Revisa tu bandeja de entrada y haz clic en el enlace para verificar tu cuenta.",
-      "backToSignIn": "Volver a inicio de sesión"
+      "backToSignIn": "Volver a inicio de sesión",
+      "invitationRequiredTitle": "Se requiere invitación",
+      "invitationRequiredBody": "Para crear una cuenta necesitas un enlace de invitación. Pide al administrador del equipo que te envíe uno desde Configuración → Miembros."
     },
     "forgotPassword": {
       "title": "Restablecer contraseña",

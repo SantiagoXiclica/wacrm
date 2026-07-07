@@ -141,19 +141,21 @@ function LoginPageInner() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            {t("noAccount")}{" "}
-            <Link
-              href={
-                inviteToken
-                  ? `/signup?invite=${encodeURIComponent(inviteToken)}`
-                  : "/signup"
-              }
-              className="text-primary hover:text-primary/80"
-            >
-              {t("createAccount")}
-            </Link>
-          </p>
+          {/* Single-tenant: the "create account" link only makes sense
+              when arriving from an invitation. Without an invite token,
+              direct signup is blocked (the signup page shows a message
+              asking for an invitation link). */}
+          {inviteToken && (
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              {t("noAccount")}{" "}
+              <Link
+                href={`/signup?invite=${encodeURIComponent(inviteToken)}`}
+                className="text-primary hover:text-primary/80"
+              >
+                {t("createAccount")}
+              </Link>
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

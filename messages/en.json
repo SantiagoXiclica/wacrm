@@ -77,7 +77,9 @@
       "passwordTooShort": "Password must be at least 6 characters",
       "successTitle": "Check your email",
       "successDescription": "We've sent a confirmation link to {email}. Please check your inbox and click the link to verify your account.",
-      "backToSignIn": "Back to sign in"
+      "backToSignIn": "Back to sign in",
+      "invitationRequiredTitle": "Invitation required",
+      "invitationRequiredBody": "You need an invitation link to create an account. Ask your team administrator to send you one from Settings → Members."
     },
     "forgotPassword": {
       "title": "Reset password",

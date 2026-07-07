@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare, CheckCircle, UsersRound } from "lucide-react";
+import { MessageSquare, CheckCircle, UsersRound, Lock } from "lucide-react";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless wrapped in Suspense — same pattern as /login.
@@ -45,6 +45,44 @@ function SignupPageInner() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
+
+  // Single-tenant: block direct signups. The portal only manages
+  // one organization, so every new user must come through an
+  // invitation link from an admin (Settings → Members). The DB
+  // trigger (handle_new_user) is the safety net that assigns any
+  // stray signup to the unified account, but we stop it here at
+  // the UX layer to avoid confusion. Placed after all hooks so
+  // React's rules-of-hooks are not violated by the early return.
+  if (!inviteToken) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md border-border bg-card">
+          <CardHeader className="items-center text-center">
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <Lock className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-xl text-foreground">
+              {t("invitationRequiredTitle")}
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {t("invitationRequiredBody")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/login">
+              <Button
+                variant="outline"
+                className="w-full border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                {t("backToSignIn")}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
