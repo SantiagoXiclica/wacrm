@@ -7,6 +7,7 @@ import {
 } from '@/lib/whatsapp/meta-api'
 import {
   validateTemplatePayload,
+  stripInvisibleChars,
   type TemplatePayload,
 } from '@/lib/whatsapp/template-validators'
 import { buildMetaTemplatePayload } from '@/lib/whatsapp/template-components'
@@ -126,6 +127,19 @@ export async function PATCH(
         },
         { status: 400 },
       )
+    }
+
+    // Strip invisible Unicode chars that would make Meta reject
+    // valid-looking {{N}} patterns as MALFORMED_ARGUMENT.
+    payload.body_text = stripInvisibleChars(payload.body_text)
+    if (payload.footer_text) payload.footer_text = stripInvisibleChars(payload.footer_text)
+    if (payload.header_content) payload.header_content = stripInvisibleChars(payload.header_content)
+    if (payload.buttons) {
+      for (const btn of payload.buttons) {
+        if (btn.type === 'URL' && btn.url) {
+          btn.url = stripInvisibleChars(btn.url)
+        }
+      }
     }
 
     try {

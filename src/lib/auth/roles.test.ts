@@ -3,15 +3,19 @@ import {
   ACCOUNT_ROLES,
   type AccountRole,
   canDeleteAccount,
+  canDo,
   canEditSettings,
   canManageMembers,
   canSendMessages,
   canTransferOwnership,
   canViewOnly,
+  getDefaultPermissions,
+  getAccessibleModules,
   hasMinRole,
   isAccountRole,
   roleRank,
 } from "./roles";
+import type { RolePermissions } from "@/types";
 
 describe("roleRank", () => {
   it("orders owner > admin > agent > viewer", () => {
@@ -126,5 +130,103 @@ describe("capability predicates", () => {
     expect(canTransferOwnership("admin")).toBe(false);
     expect(canTransferOwnership("agent")).toBe(false);
     expect(canTransferOwnership("viewer")).toBe(false);
+  });
+});
+
+describe("canDo (configurable permissions)", () => {
+  const adminPerms: RolePermissions = {
+    dashboard: { view: true },
+    contacts: { view: true, create: true, edit: true, delete: false },
+    settings: { whatsapp: true, roles: false },
+  };
+
+  it("owner always returns true regardless of permissions", () => {
+    expect(canDo("owner", {}, "anything", "anything")).toBe(true);
+    expect(canDo("owner", adminPerms, "contacts", "delete")).toBe(true);
+  });
+
+  it("returns true when permission is explicitly true", () => {
+    expect(canDo("admin", adminPerms, "dashboard", "view")).toBe(true);
+    expect(canDo("admin", adminPerms, "contacts", "create")).toBe(true);
+  });
+
+  it("returns false when permission is explicitly false", () => {
+    expect(canDo("admin", adminPerms, "contacts", "delete")).toBe(false);
+    expect(canDo("admin", adminPerms, "settings", "roles")).toBe(false);
+  });
+
+  it("returns false when module is missing", () => {
+    expect(canDo("admin", adminPerms, "broadcasts", "view")).toBe(false);
+  });
+
+  it("returns false when action is missing", () => {
+    expect(canDo("admin", adminPerms, "dashboard", "create")).toBe(false);
+  });
+
+  it("returns false for empty permissions", () => {
+    expect(canDo("agent", {}, "dashboard", "view")).toBe(false);
+  });
+});
+
+describe("getDefaultPermissions", () => {
+  it("owner gets all permissions true", () => {
+    const perms = getDefaultPermissions("owner");
+    expect(perms.dashboard?.view).toBe(true);
+    expect(perms.inbox?.send).toBe(true);
+    expect(perms.contacts?.delete).toBe(true);
+    expect(perms.settings?.roles).toBe(true);
+    expect(perms.settings?.whatsapp).toBe(true);
+  });
+
+  it("admin gets all except roles", () => {
+    const perms = getDefaultPermissions("admin");
+    expect(perms.dashboard?.view).toBe(true);
+    expect(perms.settings?.roles).toBe(false);
+    expect(perms.settings?.whatsapp).toBe(true);
+  });
+
+  it("agent gets operational only", () => {
+    const perms = getDefaultPermissions("agent");
+    expect(perms.dashboard?.view).toBe(true);
+    expect(perms.inbox?.send).toBe(true);
+    expect(perms.contacts?.create).toBe(true);
+    expect(perms.contacts?.delete).toBe(false);
+    expect(perms.automations?.view).toBe(false);
+    expect(perms.settings?.whatsapp).toBe(false);
+  });
+
+  it("viewer gets view-only", () => {
+    const perms = getDefaultPermissions("viewer");
+    expect(perms.dashboard?.view).toBe(true);
+    expect(perms.inbox?.send).toBe(false);
+    expect(perms.contacts?.create).toBe(false);
+    expect(perms.pipelines?.move_deals).toBe(false);
+  });
+});
+
+describe("getAccessibleModules", () => {
+  it("owner gets all modules", () => {
+    const modules = getAccessibleModules("owner", {});
+    expect(modules).toContain("dashboard");
+    expect(modules).toContain("inbox");
+    expect(modules).toContain("settings");
+    expect(modules).toContain("flows");
+  });
+
+  it("returns modules with view=true", () => {
+    const perms: RolePermissions = {
+      dashboard: { view: true },
+      contacts: { view: true },
+      automations: { view: false },
+    };
+    const modules = getAccessibleModules("agent", perms);
+    expect(modules).toContain("dashboard");
+    expect(modules).toContain("contacts");
+    expect(modules).not.toContain("automations");
+  });
+
+  it("returns empty for empty permissions", () => {
+    const modules = getAccessibleModules("agent", {});
+    expect(modules).toEqual([]);
   });
 });

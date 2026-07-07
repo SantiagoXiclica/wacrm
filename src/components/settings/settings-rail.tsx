@@ -4,6 +4,8 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { useRolePermissions } from '@/hooks/use-role-permissions';
 import {
   RAIL_GROUPS,
   SECTION_META,
@@ -16,11 +18,26 @@ import {
 // drives the row→column switch in the markup below — keep the two in sync.
 const RAIL_DESKTOP_MIN_PX = 1024;
 
+/** Maps settings section to (module, action) for permission filtering. */
+const SECTION_PERMISSIONS: Partial<Record<SettingsSection, [string, string]>> = {
+  whatsapp: ['settings', 'whatsapp'],
+  templates: ['settings', 'templates'],
+  fields: ['settings', 'fields_tags'],
+  deals: ['settings', 'deals_currency'],
+  members: ['settings', 'members'],
+  roles: ['settings', 'roles'],
+  ai: ['settings', 'ai'],
+  api: ['settings', 'api_keys'],
+};
+
 /**
  * The settings left rail — grouped, vertical on desktop and a
  * horizontal scroller on narrow screens (mirrors the mockup's ≤920px
  * behaviour). The active item auto-scrolls into view when the rail is
  * horizontal so a deep-linked section is never off-screen.
+ *
+ * Sections are filtered by the user's role permissions. The owner
+ * always sees everything.
  */
 export function SettingsRail({
   active,
@@ -33,6 +50,8 @@ export function SettingsRail({
 }) {
   const t = useTranslations('settings');
   const activeRef = useRef<HTMLButtonElement>(null);
+  const { accountRole } = useAuth();
+  const { canDo, loading: rolesLoading } = useRolePermissions();
 
   // When horizontal (mobile), keep the active chip in view. On desktop
   // the rail is a static column, so skip.
@@ -46,6 +65,21 @@ export function SettingsRail({
     });
   }, [active]);
 
+  // Filter sections by permissions
+  const visibleSections = SETTINGS_SECTIONS.filter((s) => {
+    // Profile, security, appearance are always visible
+    if (s === 'overview' || s === 'profile' || s === 'security' || s === 'appearance') {
+      return true;
+    }
+    // Owner always sees everything
+    if (accountRole === 'owner') return true;
+    // While roles are loading, hide permission-gated sections to prevent flash
+    if (rolesLoading) return false;
+    const perm = SECTION_PERMISSIONS[s];
+    if (!perm) return true;
+    return canDo(perm[0], perm[1]);
+  });
+
   return (
     <nav
       aria-label="Settings sections"
@@ -56,9 +90,10 @@ export function SettingsRail({
       )}
     >
       {RAIL_GROUPS.map(({ label, group }) => {
-        const items = SETTINGS_SECTIONS.filter(
+        const items = visibleSections.filter(
           (s) => SECTION_META[s].group === group,
         );
+        if (items.length === 0) return null;
         return (
           <div
             key={group}

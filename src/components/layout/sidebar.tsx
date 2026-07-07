@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
 import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
+import { useRolePermissions } from "@/hooks/use-role-permissions";
 import {
   Bell,
   Crown,
@@ -98,31 +99,48 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+/** Maps nav href → (module, action) for permission filtering. */
+const NAV_PERMISSIONS: Record<string, [string, string]> = {
+  '/dashboard': ['dashboard', 'view'],
+  '/inbox': ['inbox', 'view'],
+  '/notifications': ['notifications', 'view'],
+  '/contacts': ['contacts', 'view'],
+  '/pipelines': ['pipelines', 'view'],
+  '/broadcasts': ['broadcasts', 'view'],
+  '/automations': ['automations', 'view'],
+  '/flows': ['flows', 'view'],
+  '/dashboard/agent-performance': ['agent_performance', 'view'],
+};
+
 export function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
   const unreadNotifications = useUnreadNotifications();
+  const { canDo, loading: rolesLoading } = useRolePermissions();
   const t = useTranslations("nav");
-  const navItems = useMemo<NavItem[]>(() => [
-    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
-    { href: "/inbox", label: t("inbox"), icon: MessageSquare },
-    { href: "/notifications", label: t("notifications"), icon: Bell },
-    { href: "/contacts", label: t("contacts"), icon: Users },
-    { href: "/pipelines", label: t("pipelines"), icon: GitBranch },
-    { href: "/broadcasts", label: t("broadcasts"), icon: Radio },
-    { href: "/automations", label: t("automations"), icon: Zap },
-    { href: "/flows", label: t("flows"), icon: Workflow, beta: true },
-    ...(accountRole === "admin" || accountRole === "owner"
-      ? [
-          {
-            href: "/dashboard/agent-performance",
-            label: t("agentPerformance"),
-            icon: TrendingUp,
-          },
-        ]
-      : []),
-  ], [t, accountRole]);
+  const navItems = useMemo<NavItem[]>(() => {
+    const items: NavItem[] = [
+      { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+      { href: "/inbox", label: t("inbox"), icon: MessageSquare },
+      { href: "/notifications", label: t("notifications"), icon: Bell },
+      { href: "/contacts", label: t("contacts"), icon: Users },
+      { href: "/pipelines", label: t("pipelines"), icon: GitBranch },
+      { href: "/broadcasts", label: t("broadcasts"), icon: Radio },
+      { href: "/automations", label: t("automations"), icon: Zap },
+      { href: "/flows", label: t("flows"), icon: Workflow, beta: true },
+      { href: "/dashboard/agent-performance", label: t("agentPerformance"), icon: TrendingUp },
+    ];
+    // Filter by permissions — owner always sees everything
+    if (accountRole !== 'owner' && !rolesLoading) {
+      return items.filter((item) => {
+        const perm = NAV_PERMISSIONS[item.href];
+        if (!perm) return true;
+        return canDo(perm[0], perm[1]);
+      });
+    }
+    return items;
+  }, [t, accountRole, canDo, rolesLoading]);
 
   const bottomNavItems = useMemo(() => [
     { href: "/settings", label: t("settings"), icon: Settings },

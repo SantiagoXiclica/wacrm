@@ -64,6 +64,10 @@ export function isAccountRole(value: unknown): value is AccountRole {
 // Every UI gate and API route guard should call one of these
 // instead of comparing role strings inline. Adding a capability
 // = one new predicate here + one call site change per consumer.
+//
+// NOTE: These predicates are FALLBACK defaults used when no
+// configurable roles exist in BD. When roles are configured,
+// use `canDo()` from use-role-permissions instead.
 // ============================================================
 
 /** Owner / admin: invite, remove, change roles. */
@@ -106,4 +110,109 @@ export function canDeleteAccount(role: AccountRole): boolean {
 /** Owner only: hand the account to another member. */
 export function canTransferOwnership(role: AccountRole): boolean {
   return role === "owner";
+}
+
+// ============================================================
+// Configurable permission checking
+//
+// Uses RolePermissions from BD. Owner always gets full access
+// regardless of configured permissions.
+// ============================================================
+
+import type { RolePermissions } from "@/types/roles";
+
+/**
+ * Check if a role has a specific permission. Owner always returns true.
+ * @param role - The account role (for owner bypass)
+ * @param permissions - The role's permissions from BD
+ * @param module - The module key (e.g. 'contacts', 'settings')
+ * @param action - The action key (e.g. 'create', 'edit', 'delete')
+ */
+export function canDo(
+  role: AccountRole,
+  permissions: RolePermissions,
+  module: string,
+  action: string,
+): boolean {
+  if (role === 'owner') return true;
+  return permissions[module]?.[action] === true;
+}
+
+/**
+ * Get all modules a role has access to (at least view).
+ * Owner gets all modules.
+ */
+export function getAccessibleModules(
+  role: AccountRole,
+  permissions: RolePermissions,
+): string[] {
+  if (role === 'owner') {
+    return [
+      'dashboard', 'inbox', 'notifications', 'contacts',
+      'pipelines', 'broadcasts', 'automations', 'flows',
+      'agent_performance', 'settings',
+    ];
+  }
+  return Object.entries(permissions)
+    .filter(([, actions]) => actions.view === true)
+    .map(([mod]) => mod);
+}
+
+/**
+ * Default permissions for a role when no BD config exists.
+ * Matches the seed data from migration 033.
+ */
+export function getDefaultPermissions(role: AccountRole): RolePermissions {
+  switch (role) {
+    case 'owner':
+    case 'admin':
+      return {
+        dashboard: { view: true },
+        inbox: { view: true, send: true, read: true },
+        notifications: { view: true },
+        contacts: { view: true, create: true, edit: true, delete: true, import: true },
+        pipelines: { view: true, edit: true, move_deals: true },
+        broadcasts: { view: true, create: true, send: true },
+        automations: { view: true, create: true, edit: true },
+        flows: { view: true, create: true, edit: true },
+        agent_performance: { view: role === 'owner' || role === 'admin' },
+        settings: {
+          whatsapp: true, templates: true, fields_tags: true,
+          deals_currency: true, members: true, ai: true, api_keys: true,
+          roles: role === 'owner',
+        },
+      };
+    case 'agent':
+      return {
+        dashboard: { view: true },
+        inbox: { view: true, send: true, read: true },
+        notifications: { view: true },
+        contacts: { view: true, create: true, edit: true, delete: false, import: false },
+        pipelines: { view: true, edit: false, move_deals: true },
+        broadcasts: { view: true, create: false, send: false },
+        automations: { view: false, create: false, edit: false },
+        flows: { view: false, create: false, edit: false },
+        agent_performance: { view: false },
+        settings: {
+          whatsapp: false, templates: false, fields_tags: false,
+          deals_currency: false, members: false, ai: false, api_keys: false, roles: false,
+        },
+      };
+    case 'viewer':
+      return {
+        dashboard: { view: true },
+        inbox: { view: true, send: false, read: true },
+        notifications: { view: true },
+        contacts: { view: true, create: false, edit: false, delete: false, import: false },
+        pipelines: { view: true, edit: false, move_deals: false },
+        broadcasts: { view: true, create: false, send: false },
+        automations: { view: false, create: false, edit: false },
+        flows: { view: false, create: false, edit: false },
+        agent_performance: { view: false },
+        settings: {
+          whatsapp: false, templates: false, fields_tags: false,
+          deals_currency: false, members: false, ai: false, api_keys: false, roles: false,
+        },
+      };
+  }
 }

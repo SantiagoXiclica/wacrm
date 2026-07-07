@@ -50,6 +50,7 @@ import type {
 import { templateStatusConfig } from '@/lib/template-status';
 import {
   extractVariableIndices,
+  assertNoBrokenBraces,
   TEMPLATE_LIMITS,
 } from '@/lib/whatsapp/template-validators';
 
@@ -208,9 +209,23 @@ export function TemplateManager() {
   }
 
   function buildSubmitPayload() {
+    const bodyVarCount = extractVariableIndices(form.body_text).length;
+    // Guard: body_samples must match the actual variable count. Without
+    // this check a race between the resize-effect and submit could send
+    // stale sample values that don't match the body_text, triggering a
+    // Meta MALFORMED_ARGUMENT error instead of a locale-friendly toast.
+    const trimmedSamples = form.body_samples.map((v) => v.trim());
+    const nonEmptySamples = trimmedSamples.filter(Boolean);
     const sample_values: TemplateSampleValues = {};
-    if (form.body_samples.some((v) => v.trim())) {
-      sample_values.body = form.body_samples.map((v) => v.trim());
+    if (nonEmptySamples.length > 0) {
+      if (nonEmptySamples.length !== bodyVarCount) {
+        // Mismatch — likely the resize effect hasn't fired yet.
+        // Use empty samples so the server validator shows a clear error.
+        // (The server-side validateSampleValues will catch this too.)
+        sample_values.body = Array.from({ length: bodyVarCount }, () => '');
+      } else {
+        sample_values.body = nonEmptySamples;
+      }
     }
     if (form.header_format === 'text' && form.header_sample.trim()) {
       sample_values.header = [form.header_sample.trim()];
@@ -264,6 +279,13 @@ export function TemplateManager() {
     // submit button; this is a defensive second line of defense.
     if (form.category === 'Authentication') return;
     try {
+      // Client-side brace check before the payload reaches the server.
+      // Catches invisible-char / unmatched-brace issues early and shows
+      // the toast in the user's locale instead of a Meta error in English.
+      assertNoBrokenBraces(form.body_text, t('bodyText'));
+      if (form.footer_text) assertNoBrokenBraces(form.footer_text, t('footer'));
+      if (form.header_content) assertNoBrokenBraces(form.header_content, t('header'));
+
       setSubmitting(true);
       const isEdit = editingId !== null;
       const url = isEdit

@@ -31,6 +31,7 @@ export const SETTINGS_SECTIONS = [
   'fields',
   'deals',
   'members',
+  'roles',
   'ai',
   'api',
 ] as const;
@@ -57,6 +58,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   fields: { id: 'fields', label: 'fieldsAndTagsLabel', icon: Tags, group: 'workspace' },
   deals: { id: 'deals', label: 'dealsAndCurrencyLabel', icon: Coins, group: 'workspace' },
   members: { id: 'members', label: 'teamMembersLabel', icon: UsersRound, group: 'workspace' },
+  roles: { id: 'roles', label: 'rolesLabel', icon: Shield, group: 'workspace' },
   ai: { id: 'ai', label: 'aiAssistantLabel', icon: Sparkles, group: 'workspace' },
   api: { id: 'api', label: 'apiKeysLabel', icon: KeyRound, group: 'workspace' },
 };

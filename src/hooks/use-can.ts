@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useRolePermissions } from "@/hooks/use-role-permissions";
 import {
   canDeleteAccount,
   canEditSettings,
@@ -11,10 +12,8 @@ import {
 } from "@/lib/auth/roles";
 
 /**
- * Typed action keys for `useCan`. Adding a capability = one new
- * entry here + one new case in the switch below + (usually) one
- * new predicate in `@/lib/auth/roles`. Keeping the list closed
- * lets the compiler catch typos at every call site.
+ * Legacy coarse-grained action keys. These map to the original
+ * RBAC predicates and are kept for backward compatibility.
  */
 export type CanAction =
   | "manage-members"
@@ -23,6 +22,43 @@ export type CanAction =
   | "view-only"
   | "delete-account"
   | "transfer-ownership";
+
+/**
+ * Granular permission keys for configurable roles.
+ * Format: "module.action" (e.g. "contacts.create", "settings.whatsapp")
+ */
+export type GranularAction =
+  | "dashboard.view"
+  | "inbox.view"
+  | "inbox.send"
+  | "inbox.read"
+  | "notifications.view"
+  | "contacts.view"
+  | "contacts.create"
+  | "contacts.edit"
+  | "contacts.delete"
+  | "contacts.import"
+  | "pipelines.view"
+  | "pipelines.edit"
+  | "pipelines.move_deals"
+  | "broadcasts.view"
+  | "broadcasts.create"
+  | "broadcasts.send"
+  | "automations.view"
+  | "automations.create"
+  | "automations.edit"
+  | "flows.view"
+  | "flows.create"
+  | "flows.edit"
+  | "agent_performance.view"
+  | "settings.whatsapp"
+  | "settings.templates"
+  | "settings.fields_tags"
+  | "settings.deals_currency"
+  | "settings.members"
+  | "settings.ai"
+  | "settings.api_keys"
+  | "settings.roles";
 
 /**
  * Inline alternative to `<RequireRole>` for places that need a
@@ -55,13 +91,27 @@ export function useCan(action: CanAction): boolean {
     case "transfer-ownership":
       return canTransferOwnership(accountRole);
     default: {
-      // Exhaustiveness check — adding a new `CanAction` without a
-      // case here fails the typecheck because TS narrows `action`
-      // to `never` in this branch. The runtime throw is unreachable
-      // for valid inputs; it only fires if someone bypasses the
-      // type system at the call site (e.g. with a wrong-typed cast).
       const _exhaustive: never = action;
       throw new Error(`Unknown CanAction: ${String(_exhaustive)}`);
     }
   }
+}
+
+/**
+ * Check granular permissions from configurable roles in BD.
+ * Uses the role_permissions from the roles table.
+ *
+ * Example:
+ *   const can = useCanGranular();
+ *   if (can("contacts.create")) { ... }
+ */
+export function useCanGranular(): (action: GranularAction) => boolean {
+  const { profileLoading, accountRole } = useAuth();
+  const { canDo, loading: rolesLoading } = useRolePermissions();
+
+  return (action: GranularAction): boolean => {
+    if (profileLoading || rolesLoading || !accountRole) return false;
+    const [module, act] = action.split(".") as [string, string];
+    return canDo(module, act);
+  };
 }

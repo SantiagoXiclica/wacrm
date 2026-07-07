@@ -35,7 +35,7 @@ const MASKED_KEY = '••••••••••••••••';
 const PROVIDER_LABEL: Record<AiProvider, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic (Claude)',
-  'xiclica-ia-plan': 'Xiclica Plan IA',
+  'xiclica-ia-plan': 'xiclica-ia-plan',
 };
 
 const KEY_PLACEHOLDER: Record<AiProvider, string> = {
@@ -280,11 +280,8 @@ export function AiConfig() {
                 <div className="space-y-2">
                   <Label>{t('model')}</Label>
                   <div className="flex h-10 w-full items-center rounded-md border border-border bg-muted/40 px-3 text-sm text-muted-foreground">
-                    deepseek-v4-flash
+                    IRIS-IA
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Modelo fijo del plan Xiclica IA
-                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">

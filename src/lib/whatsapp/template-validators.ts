@@ -58,6 +58,53 @@ export function validateTemplateName(name: string): void {
 }
 
 /**
+ * Zero-width / invisible Unicode characters that can break Meta's
+ * {{N}} parser when embedded inside braces. Stripping is safe: they
+ * have zero visual width and carry no semantic meaning in template
+ * text. Covers:
+ *   U+200B  zero-width space
+ *   U+200C  zero-width non-joiner
+ *   U+200D  zero-width joiner
+ *   U+FEFF  BOM / zero-width no-break space
+ *   U+00A0  non-breaking space
+ *   U+2060  word joiner
+ *   U+2061–U+2064  invisible operators
+ */
+const INVISIBLE_RE = /[\u200B-\u200D\uFEFF\u00A0\u2060-\u2064]/g;
+
+/**
+ * Strip invisible Unicode characters from template text. Meta's
+ * parser rejects a template when zero-width chars appear inside
+ * `{{N}}` — they turn a valid `{{1}}` into an unrecognised pattern
+ * and trigger `INVALID_MESSAGE: MALFORMED_ARGUMENT`.
+ */
+export function stripInvisibleChars(text: string): string {
+  return text.replace(INVISIBLE_RE, '');
+}
+
+/**
+ * Validate that `{{` and `}}` are properly paired — every opening
+ * brace has a matching closing brace and they alternate correctly.
+ * Meta rejects malformed braces with `MALFORMED_ARGUMENT`.
+ */
+export function assertNoBrokenBraces(text: string, where: string): void {
+  const opens = [...text.matchAll(/\{\{/g)];
+  const closes = [...text.matchAll(/\}\}/g)];
+  if (opens.length !== closes.length) {
+    throw new Error(
+      `${where} has mismatched braces — every {{ needs a matching }}.`,
+    );
+  }
+  for (let i = 0; i < opens.length; i++) {
+    if (opens[i].index! > closes[i].index!) {
+      throw new Error(
+        `${where} has a }} without a matching {{ before it.`,
+      );
+    }
+  }
+}
+
+/**
  * Extract sorted, deduplicated {{N}} indices from a string. Returns
  * `[1, 2, 4]` for `"Hi {{1}} {{2}}, item {{4}}"`.
  *
@@ -131,6 +178,7 @@ export function validateBody(bodyText: string): number[] {
       `Body text exceeds ${TEMPLATE_LIMITS.bodyMaxLength} chars (got ${bodyText.length}).`,
     );
   }
+  assertNoBrokenBraces(bodyText, 'Body');
   assertNoInvalidVariables(bodyText, 'Body');
   const indices = extractVariableIndices(bodyText);
   assertContiguous(indices, 'Body');
@@ -144,6 +192,7 @@ export function validateFooter(footerText: string | undefined): void {
       `Footer text exceeds ${TEMPLATE_LIMITS.footerMaxLength} chars (got ${footerText.length}).`,
     );
   }
+  assertNoBrokenBraces(footerText, 'Footer');
   assertNoInvalidVariables(footerText, 'Footer');
   if (extractVariableIndices(footerText).length > 0) {
     throw new Error('Footer text cannot contain {{N}} variables (Meta rule).');
@@ -173,6 +222,7 @@ export function validateHeader(
         `Header text exceeds ${TEMPLATE_LIMITS.headerTextMaxLength} chars (got ${header_content.length}).`,
       );
     }
+    assertNoBrokenBraces(header_content, 'Header');
     assertNoInvalidVariables(header_content, 'Header');
     const indices = extractVariableIndices(header_content);
     if (indices.length > 1) {
@@ -280,6 +330,7 @@ export function validateButtons(buttons: TemplateButton[] | undefined): void {
         } catch {
           throw new Error(`URL button #${i + 1} has an invalid url.`);
         }
+        assertNoBrokenBraces(b.url, `URL button #${i + 1}`);
         assertNoInvalidVariables(b.url, `URL button #${i + 1}`);
         const urlVars = extractVariableIndices(b.url);
         if (urlVars.length > 1) {

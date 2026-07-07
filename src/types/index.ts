@@ -1,5 +1,13 @@
 import type { AccountRole } from "@/lib/auth/roles";
 
+// Re-export role types from dedicated file to avoid circular import
+export type {
+  PermissionModule,
+  PermissionAction,
+  RolePermissions,
+  Role,
+} from "@/types/roles";
+
 export interface Profile {
   id: string;
   user_id: string;

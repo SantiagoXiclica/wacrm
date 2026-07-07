@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertNoBrokenBraces,
   assertNoInvalidVariables,
   extractVariableIndices,
+  stripInvisibleChars,
   TEMPLATE_LIMITS,
   validateBody,
   validateButtons,
@@ -56,6 +58,51 @@ describe('assertNoInvalidVariables', () => {
   it('includes the "where" label in the error', () => {
     expect(() => assertNoInvalidVariables('{{0}}', 'Header'))
       .toThrow(/Header/);
+  });
+});
+
+describe('assertNoBrokenBraces', () => {
+  it('passes for proper {{N}} variables', () => {
+    expect(() => assertNoBrokenBraces('Hi {{1}} and {{2}}', 'Body')).not.toThrow();
+  });
+  it('passes for text without braces', () => {
+    expect(() => assertNoBrokenBraces('plain text', 'Body')).not.toThrow();
+  });
+  it('rejects unmatched {{', () => {
+    expect(() => assertNoBrokenBraces('Hi {{1}} and {{', 'Body')).toThrow(/mismatched/);
+  });
+  it('rejects unmatched }}', () => {
+    expect(() => assertNoBrokenBraces('Hi }}', 'Body')).toThrow(/mismatched/);
+  });
+  it('rejects }} before {{', () => {
+    expect(() => assertNoBrokenBraces('}}text{{1}}', 'Body')).toThrow(/mismatched/);
+  });
+  it('includes the "where" label in the error', () => {
+    expect(() => assertNoBrokenBraces('{{', 'Footer')).toThrow(/Footer/);
+  });
+});
+
+describe('stripInvisibleChars', () => {
+  it('strips zero-width space from inside {{}}', () => {
+    expect(stripInvisibleChars('Hi \u200B{{1}}')).toBe('Hi {{1}}');
+  });
+  it('strips zero-width joiner from inside {{}}', () => {
+    expect(stripInvisibleChars('{{1}}\u200D and {{2}}')).toBe('{{1}} and {{2}}');
+  });
+  it('strips BOM / zero-width no-break space', () => {
+    expect(stripInvisibleChars('\uFEFF{{1}}')).toBe('{{1}}');
+  });
+  it('strips non-breaking space', () => {
+    expect(stripInvisibleChars('Hello\u00A0{{1}}')).toBe('Hello{{1}}');
+  });
+  it('strips invisible operators', () => {
+    expect(stripInvisibleChars('{{1}}\u2060{{2}}')).toBe('{{1}}{{2}}');
+  });
+  it('leaves text without invisible chars unchanged', () => {
+    expect(stripInvisibleChars('Hello {{1}}, how are you?')).toBe('Hello {{1}}, how are you?');
+  });
+  it('handles empty string', () => {
+    expect(stripInvisibleChars('')).toBe('');
   });
 });
 
