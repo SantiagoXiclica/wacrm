@@ -160,6 +160,17 @@ pnpm test:watch                      # vitest en watch
   (`5f88a46f-0433-41df-9646-fd8ff36a2cdb`). RLS vía
   `is_account_member(account_id, min_role)`. En server-side sin sesión
   (API pública), usar `accountId` del contexto (ver `api-context.ts`).
+- **Single-tenant signup (migración 033):** el trigger
+  `handle_new_user` asigna TODO nuevo usuario directamente al account
+  unificado con rol `agent` (no crea cuentas personales). El signup
+  directo está bloqueado en la UI (`/signup` sin `?invite=` muestra
+  mensaje de invitación requerida). El flujo correcto para añadir
+  agentes es **Settings → Members → Invite Member**: el admin genera
+  un enlace, el invitado se registra con ese enlace y al aceptar la
+  invitación en `/join/<token>` su rol se actualiza al invitado
+  (admin/agent/viewer) vía `redeem_invitation`. La red de seguridad
+  del trigger garantiza que incluso un signup bypass termine en el
+  tenant correcto.
 - **Encriptación:** secrets de WhatsApp se guardan AES-256-GCM
   (formato `iv:ct:tag`). Usar `encrypt()` / `decrypt()` de
   `src/lib/whatsapp/encryption.ts`. La key está en
