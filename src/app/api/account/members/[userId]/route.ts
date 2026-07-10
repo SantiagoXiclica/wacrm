@@ -47,10 +47,10 @@ export async function PATCH(
   { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
-    const ctx = await requireRole("admin");
+    const ctx = await requireRole("owner");
 
     const limit = checkRateLimit(
-      `admin:memberRole:${ctx.userId}`,
+      `owner:memberRole:${ctx.userId}`,
       RATE_LIMITS.adminAction,
     );
     if (!limit.success) return rateLimitResponse(limit);

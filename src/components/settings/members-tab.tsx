@@ -126,7 +126,7 @@ function fmtExpiresIn(iso: string, t?: ReturnType<typeof useTranslations>): stri
 export function MembersTab() {
   const t = useTranslations('settings.members');
   const tr = useTranslations('roles');
-  const { user, canManageMembers } = useAuth();
+  const { user, canManageMembers, accountRole } = useAuth();
   const { getPresence, getRow, now } = usePresence();
 
   const [members, setMembers] = useState<Member[]>([]);
@@ -410,10 +410,11 @@ export function MembersTab() {
                       inline. Items align to the start on mobile so the
                       role dropdown lines up under the avatar. */}
                   <div className="flex items-center gap-2 sm:gap-3">
-                    {/* Role display / editor. Inline Select is admin+
-                        only AND not allowed on the owner row (owner
-                        changes go through transfer, which lands later). */}
-                    {canManageMembers && !isOwnerRow && !isSelf ? (
+                    {/* Role display / editor. Only the owner can change
+                        roles of other members. Admin can invite/remove
+                        but NOT change roles. Owner row and self are
+                        always non-editable. */}
+                    {accountRole === 'owner' && !isOwnerRow && !isSelf ? (
                       <Select
                         value={member.role}
                         onValueChange={(v) =>
