@@ -218,9 +218,11 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (claimedError) {
-      console.error('Error checking phone_number_id ownership:', claimedError)
+      console.error('Error checking phone_number_id ownership:', JSON.stringify(claimedError, null, 2))
+      console.error('Service role key present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+      console.error('Supabase URL present:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
       return NextResponse.json(
-        { error: 'Failed to validate configuration' },
+        { error: `Failed to validate configuration: ${claimedError.message || claimedError.code || 'unknown'}` },
         { status: 500 }
       )
     }
