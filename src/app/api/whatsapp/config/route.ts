@@ -373,9 +373,9 @@ export async function POST(request: Request) {
         .eq('account_id', accountId)
 
       if (updateError) {
-        console.error('Error updating whatsapp_config:', updateError)
+        console.error('Error updating whatsapp_config:', JSON.stringify(updateError, null, 2))
         return NextResponse.json(
-          { error: 'Failed to update configuration' },
+          { error: `Failed to update configuration: ${updateError.message || updateError.code || 'unknown'}` },
           { status: 500 }
         )
       }
@@ -393,9 +393,9 @@ export async function POST(request: Request) {
         })
 
       if (insertError) {
-        console.error('Error inserting whatsapp_config:', insertError)
+        console.error('Error inserting whatsapp_config:', JSON.stringify(insertError, null, 2))
         return NextResponse.json(
-          { error: 'Failed to save configuration' },
+          { error: `Failed to save configuration: ${insertError.message || insertError.code || 'unknown'}` },
           { status: 500 }
         )
       }
