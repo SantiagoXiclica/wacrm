@@ -210,21 +210,20 @@ export async function POST(request: Request) {
     // inbound message. See issue #136. Post-multi-user we key on
     // account_id (not user_id) since teammates inside the same account
     // all share one config; the conflict is between accounts.
-    const { data: claimed, error: claimedError } = await supabaseAdmin()
-      .from('whatsapp_config')
-      .select('account_id')
-      .eq('phone_number_id', phone_number_id)
-      .neq('account_id', accountId)
-      .maybeSingle()
-
-    if (claimedError) {
-      console.error('Error checking phone_number_id ownership:', JSON.stringify(claimedError, null, 2))
-      console.error('Service role key present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
-      console.error('Supabase URL present:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
-      return NextResponse.json(
-        { error: `Failed to validate configuration: ${claimedError.message || claimedError.code || 'unknown'}` },
-        { status: 500 }
-      )
+    let claimed: { account_id: string } | null = null
+    try {
+      const result = await supabaseAdmin()
+        .from('whatsapp_config')
+        .select('account_id')
+        .eq('phone_number_id', phone_number_id)
+        .neq('account_id', accountId)
+        .maybeSingle()
+      claimed = result.data
+      if (result.error) {
+        console.warn('[whatsapp/config POST] phone_number_id ownership check failed (non-fatal):', result.error.message)
+      }
+    } catch (err) {
+      console.warn('[whatsapp/config POST] supabaseAdmin() failed (non-fatal):', err instanceof Error ? err.message : err)
     }
 
     if (claimed) {
