@@ -4,6 +4,23 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin();
 
 /**
+ * Derive the Supabase host from NEXT_PUBLIC_SUPABASE_URL so CSP
+ * headers work with self-hosted Supabase on custom domains, not
+ * just *.supabase.co.
+ */
+function supabaseOrigin(): string {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    if (!url) return "";
+    return new URL(url).origin;
+  } catch {
+    return "";
+  }
+}
+
+const SB_ORIGIN = supabaseOrigin();
+
+/**
  * Baseline security headers applied to every response.
  *
  * CSP ships as `Content-Security-Policy-Report-Only` so the browser
@@ -51,11 +68,13 @@ const SECURITY_HEADERS = [
       "img-src 'self' data: blob: https:",
       // Outbound media previews (blob: from MediaRecorder + file picker)
       // and Supabase public-bucket audio/video the inbox renders.
-      "media-src 'self' blob: https://*.supabase.co",
+      // Includes both *.supabase.co (hosted) and the self-hosted origin.
+      `media-src 'self' blob: https://*.supabase.co${SB_ORIGIN ? ` ${SB_ORIGIN}` : ""}`,
       "font-src 'self' data:",
       // Supabase REST + realtime (WSS). All Meta API calls happen
       // server-side, so graph.facebook.com does not belong here.
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      // Includes both *.supabase.co (hosted) and the self-hosted origin.
+      `connect-src 'self' https://*.supabase.co wss://*.supabase.co${SB_ORIGIN ? ` ${SB_ORIGIN} wss://${new URL(SB_ORIGIN).host}` : ""}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
