@@ -40,6 +40,9 @@ yarn-error.log*
 # easypanel — sensitive files
 easypanel/.env*
 
+# credentials
+credentials.txt
+
 # vercel
 .vercel
 
